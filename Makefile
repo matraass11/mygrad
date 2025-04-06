@@ -1,2 +1,6 @@
-grad.cppp:
-	clang++ -o grad grad.cpp
+run: grad
+	./grad.o
+
+grad: 
+	clang++ -o grad.o grad.cpp
+
