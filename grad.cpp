@@ -15,7 +15,7 @@ public:
     void propagateBack(){
         // increment parents' grads knowing the grad of the self and how self came to be
         // if self is result of addition and dself/dchild = 2, then we increment parents' grads by 2*1
-        // std::cout << "backward undefined" << std::endl;
+        std::cout << "backward undefined" << std::endl;
     }
     Sum operator+(Value other);
     Product operator*(Value other);
@@ -34,7 +34,7 @@ public:
 
 Sum Value::operator+(Value other){
     double sum = data+other.data;
-    Sum child(sum, parent1=this, parent2=&other);
+    Sum child(sum, this, &other);
     return child;
 };
 
@@ -50,11 +50,9 @@ public:
 
 Product Value::operator*(Value other){
     double product = data * other.data;
-    Product child(product, parent1=this, parent2=&other);
+    Product child(product, this, &other);
     return child;
 }
-
-
 
 int main(){
     Value r1c1(3), r1c2(3), r2c1(4), r2c2(6), n(-1);
