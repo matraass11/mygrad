@@ -28,7 +28,7 @@ public:
         parent1->grad += grad*1;
         parent2->grad += grad*1;
         parent1->propagateBack(), parent2->propagateBack();
-        // std::cout << "parent1: " << parent1->data << std::endl;
+        std::cout << "parent1: " << parent1->data << std::endl;
     }
 };
 
@@ -59,10 +59,11 @@ Product Value::operator*(Value other){
 int main(){
     Value r1c1(3), r1c2(3), r2c1(4), r2c2(6), n(-1);
     Product pr = r1c1*r1c2;
+
     // std::cout << pr.parent1 << std::endl;
 
     Sum det = (r1c1 * r2c2) + (n * r2c1 * r1c2);
     det.propagateBack();
-    std::cout << det.parent2 << "buhaha" << std::endl;
+    // std::cout << det.parent1 << "buhaha" << std::endl;
     
 }
