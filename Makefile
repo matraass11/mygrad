@@ -1,6 +1,6 @@
-run: grad
-	./grad.o
+run: main
+	./main.o
 
-grad: 
-	clang++ -o grad.o grad.cpp
+main: 
+	clang++ -o main.o main.cpp
 
