@@ -25,7 +25,14 @@ public:
 
     Sum operator+(Value& other);
     Product operator*(Value& other);
+    
+    friend std::ostream& operator<< (std::ostream& outputStream, const Value& value);
 }; 
+
+std::ostream& operator<< (std::ostream& outputStream, const Value& value){
+    outputStream << value.data;
+    return outputStream;
+}
 
 class Sum : public Value {
 using Value::Value;
