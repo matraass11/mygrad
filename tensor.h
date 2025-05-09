@@ -10,14 +10,13 @@
 
 
 class Tensor {
-    std::vector<int> dimensions;
+    const std::vector<int> dimensions;
+    const int length;
     Value* values_array;
-    int length = 1;
 
 public:
     explicit Tensor(std::vector<int> dimensions, std::vector<double> dataVector) // pass a value creator function instead of a vector?
-    : dimensions(dimensions) {
-        length = lengthOfTensorFromItsDimensionVector(dimensions);
+    : dimensions(dimensions), length(lengthOfTensorFromItsDimensionVector(dimensions))  {
 
         if (dataVector.size() != length){
             std::cout << "dataVector size doesn't correspond to the dimensions, exiting" << std::endl;
@@ -33,13 +32,8 @@ public:
 
 
     explicit Tensor(const Tensor& IndexedInto, int index) // constructor specifically for indexing
-    : dimensions(), values_array(), length(IndexedInto.length / IndexedInto.dimensions[0])
-    {
-        for (int i=1; i<IndexedInto.dimensions.size(); i++){
-            dimensions.push_back(IndexedInto.dimensions[i]);
-        }
-        values_array = IndexedInto.values_array + index * length;
-    }
+    : dimensions(std::vector<int>(IndexedInto.dimensions.begin() + 1, IndexedInto.dimensions.end())), 
+    length(IndexedInto.length / IndexedInto.dimensions[0]), values_array(IndexedInto.values_array + index * length) {}
     
     
     Tensor operator[](int index) const {
@@ -48,6 +42,20 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& outputStream, const Tensor& tensor);
+
+    // Tensor matmul(const Tensor& other){
+    //     if (this->dimensions.size() != 2 || other.dimensions.size() != 2){
+    //         std::cout << "error: matrix multiplication only available for 2d tensors at the moment. exiting" << std::endl;
+    //         exit(1);
+    //     }
+    //     if (this->dimensions[1] != other.dimensions[0]){
+    //         std::cout << "error: matrix multiplication undefined for these dimensions. exiting" << std::endl;
+    //         exit(1);
+    //     }
+
+    //     Tensor product({this->dimensions[0], other.dimensions[1]}, )
+
+    // }
 };
 
 std::ostream& operator<<(std::ostream& outputStream, const Tensor& tensor){
@@ -67,26 +75,3 @@ std::ostream& operator<<(std::ostream& outputStream, const Tensor& tensor){
     return outputStream;
 }
 
-Tensor singleValueTensor(std::vector<int> dimensions, double value){
-    std::vector<double> values;
-    int length = lengthOfTensorFromItsDimensionVector(dimensions);
-    for (int i=0; i<length; i++){
-        values.push_back(value);
-    }
-    return Tensor(dimensions, values);
- }
-
-
- Tensor normDistTensor(std::vector<int> dimensions){
-    std::vector<double> values;
-    int length = lengthOfTensorFromItsDimensionVector(dimensions);
-
-    std::default_random_engine generator;
-    std::normal_distribution<double> distribution(0.0, 1.0);
-  
-    for (int i=0; i<length; i++){
-        values.push_back(distribution(generator));
-    }
-    Tensor tensor(dimensions, values);
-    return tensor;
- }
