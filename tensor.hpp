@@ -4,15 +4,15 @@
 #include <vector>
 #include <cmath>
 #include <random>
-#include "grad.h"
-#include "helper.h"
+#include "grad.hpp"
+#include "helper.hpp"
 // class Value;
 
 
 class Tensor {
     const std::vector<int> dimensions;
     const int length;
-    Value* values_array;
+    Value* valuesArray;
 
 public:
     explicit Tensor(std::vector<int> dimensions, std::vector<double> dataVector) // pass a value creator function instead of a vector?
@@ -23,17 +23,17 @@ public:
             exit(1);
         }
 
-        values_array = new Value[length]; //delete[] ? 
+        valuesArray = new Value[length]; //delete[] ? 
                                          //is this a proper way to initialize my object?
         for (int i=0; i<length; i++){
-            values_array[i] = Value(dataVector[i]);
+            valuesArray[i] = Value(dataVector[i]);
         }
     }
 
 
     explicit Tensor(const Tensor& IndexedInto, int index) // constructor specifically for indexing
     : dimensions(std::vector<int>(IndexedInto.dimensions.begin() + 1, IndexedInto.dimensions.end())), 
-    length(IndexedInto.length / IndexedInto.dimensions[0]), values_array(IndexedInto.values_array + index * length) {}
+    length(IndexedInto.length / IndexedInto.dimensions[0]), valuesArray(IndexedInto.valuesArray + index * length) {}
     
     
     Tensor operator[](int index) const {
@@ -60,7 +60,7 @@ public:
 
 std::ostream& operator<<(std::ostream& outputStream, const Tensor& tensor){
     if (tensor.dimensions.size() == 0){
-        outputStream << *tensor.values_array;
+        outputStream << *tensor.valuesArray;
     }
     else {
         outputStream << "[";

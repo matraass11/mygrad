@@ -1,5 +1,5 @@
 #include <iostream>
-#include "tensor.h"
+#include "tensor.hpp"
 
 #include <array>
 
