@@ -1,11 +1,12 @@
+.PHONY : all main clean
 run: main
 	./main.o
 
 main: 
-	clang++ -o main.o main.cpp
+	clang++ -std=c++11 main.cpp -o main.o
 
 debug: maind
 	./main.o
 
 maind: 
-	clang++ -o main.o main.cpp -g
+	clang++ -std=c++11 -o main.o main.cpp -g
