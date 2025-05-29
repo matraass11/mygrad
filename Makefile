@@ -1,12 +1,16 @@
-.PHONY : all main clean
-run: main
-	./main.o
+version = -std=c++14
 
-main: 
-	clang++ -std=c++11 main.cpp -o main.o
+main: main.o tensor.o
+	clang++ main.o tensor.o -o main
 
-debug: maind
-	./main.o
+main.o: main.cpp
+	clang -c $(version) -g main.cpp
 
-maind: 
-	clang++ -std=c++11 -o main.o main.cpp -g
+tensor.o: tensor.cpp
+	clang -c $(version) -g tensor.cpp 
+	
+clean:
+	rm *.o
+	
+# maind: 
+# 	clang++ $(version) -o main.o main.cpp -g
