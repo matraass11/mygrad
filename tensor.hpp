@@ -1,47 +1,47 @@
 #pragma once
 #include <memory>
 
+class TensorMatMulProduct;
+
 class Tensor {
-protected:
-    std::unique_ptr<double[]> dataArrayPtr;
-    std::unique_ptr<double[]> gradArrayPtr;
 public:
     const std::vector<uint> dimensions;
     const size_t length;
+
 protected:
-    Tensor* parent1;
-    Tensor* parent2;
+    std::unique_ptr<double[]> dataArrayPtr;
+    std::unique_ptr<double[]> gradArrayPtr;
 
 public:
 
-    Tensor( std::vector<uint> dimensionsVector,
-            size_t length );
-        
+    Tensor( std::vector<uint> dimensionsVector);
 
     Tensor( std::vector<double> dataVector, 
-            std::vector<uint> dimensionsVector,
-            size_t length );
+            std::vector<uint> dimensionsVector);
 
-    void print();
+    void print() const;
+    double at(std::vector<int> indices) const;
 
 protected:
-    size_t lengthFromDimensionsVector(std::vector<uint>& dimensionsVector);
-
-    void printRecursively(uint start, uint dimension, uint volumeOfPreviousDimension) const {
-        uint increment = volumeOfPreviousDimension / dimensions[dimension];
-        uint end = start + increment + 1;
-        std::cout << "[";
-        for (int i=start; i < end; i+=increment){
-            if (increment==1){
-                std::cout << dataArrayPtr[i];
-            }
-            else {
-                printRecursively(i, dimension+1, increment);
-            }
-            if (i != end-1){
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]";
-    }
+    size_t lengthFromDimensionsVector(const std::vector<uint>& dimensionsVector) const;
+    void printRecursively(uint start, uint dimension, uint volumeOfPreviousDimension) const;
+    int indicesToLocationIn1dArray(std::vector<int> indices) const;
 };
+
+
+
+class TensorMatMulProduct : public Tensor {
+public:
+    TensorMatMulProduct (Tensor& rightTensor, Tensor& leftTensor);
+
+protected:
+    Tensor* leftParent; 
+    Tensor* rightParent;       
+    
+    std::vector<uint> dimensionsFromParents(Tensor& leftParent, Tensor& rightParent);
+    void assignNewParents(Tensor* leftParent, Tensor* rightParent);
+
+public:
+    void matMul2dIntoSelf(Tensor& leftTensor, Tensor& rightTensor);
+    
+};  
