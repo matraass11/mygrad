@@ -8,21 +8,25 @@ protected:
     double* gradArrayPtr;
 
 public:
-    const std::vector<uint> dimensions;
+    const std::vector<int> dimensions;
     const size_t length;
 
 public:
 
     Tensor( double* dataArrayPtr, double* gradArrayPtr,
-            std::vector<uint> dimensionsVector);
+            const std::vector<int>& dimensionsVector);
 
     void print() const;
-    double at(std::vector<int> indices) const;
+    double at(const std::vector<int>& indices) const;
+    double gradAt(const std::vector<int>& indices) const;
+
+    virtual void backwardFurther() const {};
+    void incrementGradAt(const std::vector<int>& indices, double increment);
 
 protected:
-    size_t lengthFromDimensionsVector(const std::vector<uint>& dimensionsVector) const;
+    size_t lengthFromDimensionsVector(const std::vector<int>& dimensionsVector) const;
     void printRecursively(uint start, uint dimension, uint volumeOfPreviousDimension) const;
-    int indicesToLocationIn1dArray(std::vector<int> indices) const;
+    int indicesToLocationIn1dArray(const std::vector<int>& indices) const;
 };
 
 
@@ -37,10 +41,11 @@ protected:
     Tensor* leftParent; 
     Tensor* rightParent;       
     
-    std::vector<uint> dimensionsFromParents(Tensor& leftParent, Tensor& rightParent);
+    std::vector<int> dimensionsFromParents(const Tensor& leftParent, const Tensor& rightParent) const;
     void assignNewParents(Tensor* leftParent, Tensor* rightParent);
-
+    
 public:
     void matMul2dIntoSelf(Tensor& leftTensor, Tensor& rightTensor);
+    void backwardFurther() const override;
     
 };  

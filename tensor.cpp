@@ -3,7 +3,7 @@
 #include "tensor.hpp"
 
 Tensor::Tensor( double* dataArrayPtr, double* gradArrayPtr,
-                std::vector<uint> dimensionsVector) :  
+                const std::vector<int>& dimensionsVector) :  
     dataArrayPtr(dataArrayPtr), 
     gradArrayPtr(gradArrayPtr),
     dimensions(dimensionsVector),
@@ -15,7 +15,7 @@ void Tensor::print() const {
     std::cout<<"\n";
 }
 
-size_t Tensor::lengthFromDimensionsVector(const std::vector<uint>& dimensionsVector) const {
+size_t Tensor::lengthFromDimensionsVector(const std::vector<int>& dimensionsVector) const {
     size_t length = 1;
     for (int i=0; i<dimensions.size(); i++){
         length *= dimensions[i];
@@ -23,11 +23,15 @@ size_t Tensor::lengthFromDimensionsVector(const std::vector<uint>& dimensionsVec
     return length;
 }
 
-inline double Tensor::at(std::vector<int> indices) const {
+inline double Tensor::at(const std::vector<int>& indices) const {
     return dataArrayPtr[indicesToLocationIn1dArray(indices)];
 }
 
-inline int Tensor::indicesToLocationIn1dArray(std::vector<int> indices) const {
+inline double Tensor::gradAt(const std::vector<int>& indices) const {
+    return gradArrayPtr[indicesToLocationIn1dArray(indices)];
+}
+
+inline int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
     if (indices.size() != dimensions.size()){
         std::cerr << "wrond indices, exiting\n";
         exit(1);
@@ -63,8 +67,9 @@ void Tensor::printRecursively(uint start, uint dimension, uint volumeOfPreviousD
     std::cout << "]";
 }
 
-
-
+void Tensor::incrementGradAt(const std::vector<int>& indices, double increment){
+    this->gradArrayPtr[indicesToLocationIn1dArray(indices)] += increment;
+}
 
 TensorMatMulProduct::TensorMatMulProduct(
     double* dataArrayPtr, double* gradArrayPtr,
@@ -72,7 +77,7 @@ TensorMatMulProduct::TensorMatMulProduct(
         Tensor(dataArrayPtr, gradArrayPtr, dimensionsFromParents(leftParent, rightParent)), leftParent(&leftParent), rightParent(&rightParent) {}
 
 
-std::vector<uint> TensorMatMulProduct::dimensionsFromParents(Tensor& leftParent, Tensor& rightParent){
+std::vector<int> TensorMatMulProduct::dimensionsFromParents(const Tensor& leftParent, const Tensor& rightParent) const {
     // JUST 2D FOR NOW
     if (leftParent.dimensions[1] != rightParent.dimensions[0]){
         std::cerr << "wrong dims, cant matMul. exiting\n";
@@ -113,4 +118,20 @@ void TensorMatMulProduct::matMul2dIntoSelf(Tensor& leftTensor, Tensor& rightTens
     }
 
     productTensor.assignNewParents(&leftTensor, &rightTensor);
+}
+
+void TensorMatMulProduct::backwardFurther() const {
+    for (int row=0; row < dimensions[0]; row++) {
+        for (int column=0; column < dimensions[1]; column++) {
+            uint locationOfElementInProductTensor = indicesToLocationIn1dArray({row, column});
+            
+            for (int dotProductIterator=0; dotProductIterator < leftParent->dimensions[1]; dotProductIterator++) {
+                leftParent->incrementGradAt({row, dotProductIterator}, 
+                    rightParent->at({dotProductIterator, column}) * gradArrayPtr[locationOfElementInProductTensor]); 
+
+                rightParent->incrementGradAt({row, dotProductIterator}, 
+                    leftParent->at({dotProductIterator, column}) * gradArrayPtr[locationOfElementInProductTensor]); 
+            }
+        }
+    }
 }
