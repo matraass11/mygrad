@@ -1,22 +1,19 @@
 #pragma once
-#include <memory>
 
 class TensorMatMulProduct;
 
 class Tensor {
+protected:
+    double* dataArrayPtr;
+    double* gradArrayPtr;
+
 public:
     const std::vector<uint> dimensions;
     const size_t length;
 
-protected:
-    std::unique_ptr<double[]> dataArrayPtr;
-    std::unique_ptr<double[]> gradArrayPtr;
-
 public:
 
-    Tensor( std::vector<uint> dimensionsVector);
-
-    Tensor( std::vector<double> dataVector, 
+    Tensor( double* dataArrayPtr, double* gradArrayPtr,
             std::vector<uint> dimensionsVector);
 
     void print() const;
@@ -32,7 +29,9 @@ protected:
 
 class TensorMatMulProduct : public Tensor {
 public:
-    TensorMatMulProduct (Tensor& rightTensor, Tensor& leftTensor);
+    TensorMatMulProduct (
+        double* dataArrayPtr, double* gradArrayPtr,
+        Tensor& rightTensor, Tensor& leftTensor);
 
 protected:
     Tensor* leftParent; 

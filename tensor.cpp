@@ -2,21 +2,13 @@
 #include <iostream>
 #include "tensor.hpp"
 
-Tensor::Tensor( std::vector<uint> dimensionsVector) :  
-    dimensions(dimensionsVector),
-    length(lengthFromDimensionsVector(dimensions)),
-    dataArrayPtr(std::make_unique<double[]>(length)), 
-    gradArrayPtr(std::make_unique<double[]>(length)) {}
-        
-
-Tensor::Tensor( std::vector<double> dataVector, 
+Tensor::Tensor( double* dataArrayPtr, double* gradArrayPtr,
                 std::vector<uint> dimensionsVector) :  
-    Tensor(dimensionsVector)
-    {
-        for (int i = 0; i < length; i++){
-            dataArrayPtr[i] = dataVector[i];
-        }
-    }
+    dataArrayPtr(dataArrayPtr), 
+    gradArrayPtr(gradArrayPtr),
+    dimensions(dimensionsVector),
+    length(lengthFromDimensionsVector(dimensions)) {}
+
 
 void Tensor::print() const {
     printRecursively(0, 0, length);
@@ -74,8 +66,10 @@ void Tensor::printRecursively(uint start, uint dimension, uint volumeOfPreviousD
 
 
 
-TensorMatMulProduct::TensorMatMulProduct(Tensor& leftParent, Tensor& rightParent) :
-    Tensor(dimensionsFromParents(leftParent, rightParent)), leftParent(&leftParent), rightParent(&rightParent) {}
+TensorMatMulProduct::TensorMatMulProduct(
+    double* dataArrayPtr, double* gradArrayPtr,
+    Tensor& leftParent, Tensor& rightParent) :
+        Tensor(dataArrayPtr, gradArrayPtr, dimensionsFromParents(leftParent, rightParent)), leftParent(&leftParent), rightParent(&rightParent) {}
 
 
 std::vector<uint> TensorMatMulProduct::dimensionsFromParents(Tensor& leftParent, Tensor& rightParent){
