@@ -11,8 +11,19 @@ Tensor::Tensor( double* dataArrayPtr, double* gradArrayPtr,
 
 
 void Tensor::print() const {
-    printRecursively(0, 0, length);
-    std::cout<<"\n";
+    printRecursively(0, 0, length, false);
+    std::cout << "\n";
+}
+
+void Tensor::printGrad() const {
+    printRecursively(0, 0, length, true);
+    std::cout << "\n";
+}
+
+void Tensor::setAllGradsTo(double newGrad) {
+    for (int i=0; i < length; i++){
+        gradArrayPtr[i] = newGrad;
+    }
 }
 
 size_t Tensor::lengthFromDimensionsVector(const std::vector<int>& dimensionsVector) const {
@@ -33,7 +44,7 @@ inline double Tensor::gradAt(const std::vector<int>& indices) const {
 
 inline int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
     if (indices.size() != dimensions.size()){
-        std::cerr << "wrond indices, exiting\n";
+        std::cerr << "wrong indices, exiting\n";
         exit(1);
     }  
     int locationOfElementInDataArray = 0;
@@ -49,16 +60,21 @@ inline int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) c
     return locationOfElementInDataArray;
 }
 
-void Tensor::printRecursively(uint start, uint dimension, uint volumeOfPreviousDimension) const {
+void Tensor::printRecursively(uint start, uint dimension, uint volumeOfPreviousDimension, bool printGrad) const {
     uint increment = volumeOfPreviousDimension / dimensions[dimension];
     uint lastSubDimensionEntry = start + increment*(dimensions[dimension] - 1); 
     std::cout << "[";
     for (int i=start; i <= lastSubDimensionEntry; i+=increment){
         if (increment==1){
-            std::cout << dataArrayPtr[i];
+            if (printGrad) {
+                std::cout << gradArrayPtr[i];
+            }
+            else {
+                std::cout << dataArrayPtr[i];
+            }
         }
         else {
-            printRecursively(i, dimension+1, increment);
+            printRecursively(i, dimension+1, increment, printGrad);
         }
         if (i != lastSubDimensionEntry){
             std::cout << ", ";
@@ -129,8 +145,8 @@ void TensorMatMulProduct::backwardFurther() const {
                 leftParent->incrementGradAt({row, dotProductIterator}, 
                     rightParent->at({dotProductIterator, column}) * gradArrayPtr[locationOfElementInProductTensor]); 
 
-                rightParent->incrementGradAt({row, dotProductIterator}, 
-                    leftParent->at({dotProductIterator, column}) * gradArrayPtr[locationOfElementInProductTensor]); 
+                rightParent->incrementGradAt({dotProductIterator, column}, 
+                    leftParent->at({row, dotProductIterator}) * gradArrayPtr[locationOfElementInProductTensor]); 
             }
         }
     }

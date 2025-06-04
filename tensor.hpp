@@ -17,15 +17,18 @@ public:
             const std::vector<int>& dimensionsVector);
 
     void print() const;
+    void printGrad() const;
     double at(const std::vector<int>& indices) const;
     double gradAt(const std::vector<int>& indices) const;
-
+    
     virtual void backwardFurther() const {};
     void incrementGradAt(const std::vector<int>& indices, double increment);
 
+    void setAllGradsTo(double newGrad);
+
 protected:
     size_t lengthFromDimensionsVector(const std::vector<int>& dimensionsVector) const;
-    void printRecursively(uint start, uint dimension, uint volumeOfPreviousDimension) const;
+    void printRecursively(uint start, uint dimension, uint volumeOfPreviousDimension, bool printGrad) const;
     int indicesToLocationIn1dArray(const std::vector<int>& indices) const;
 };
 
