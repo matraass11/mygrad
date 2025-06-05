@@ -14,7 +14,7 @@ int main(){
     tensor_matmul_product_s<2> p1(input.tensor, w1.tensor);
     tensor_sum_s<2> s1(p1.tensor, b1.tensor);
     tensor_matmul_product_s<1> p2(s1.tensor, w2.tensor);
-    tensor_sum_s<2> s2(p2.tensor, b2.tensor);
+    tensor_sum_s<1> s2(p2.tensor, b2.tensor);
     s2.tensor.print();
 
     s2.tensor.setAllGradsTo(1);

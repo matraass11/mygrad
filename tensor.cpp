@@ -106,7 +106,7 @@ TensorMatMulProduct::TensorMatMulProduct(
         Tensor(dataArrayPtr, gradArrayPtr, dimensionsFromParents(leftParent, rightParent)),
         leftParent(&leftParent), rightParent(&rightParent) {
             matMulParentsIntoSelf2d();
-        }
+}
 
 TensorSum::TensorSum(
     double* dataArrayPtr, double* gradArrayPtr, 
@@ -118,7 +118,7 @@ TensorSum::TensorSum(
                 exit(1);
             }
             sumParentsIntoSelf();
-        }
+}
 
 
 std::vector<int> TensorMatMulProduct::dimensionsFromParents(const Tensor& leftParent, const Tensor& rightParent) const {
