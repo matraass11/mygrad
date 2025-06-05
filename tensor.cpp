@@ -38,6 +38,14 @@ inline double Tensor::at(const std::vector<int>& indices) const {
     return dataArrayPtr[indicesToLocationIn1dArray(indices)];
 }
 
+inline double Tensor::atLocationIn1dArray(uint location) const {
+    if (location >= length){
+        std::cerr << "location requested is greater than the tensor's length, exiting";
+        exit(1);
+    }
+    return dataArrayPtr[location];
+}
+
 inline double Tensor::gradAt(const std::vector<int>& indices) const {
     return gradArrayPtr[indicesToLocationIn1dArray(indices)];
 }
@@ -83,14 +91,34 @@ void Tensor::printRecursively(uint start, uint dimension, uint volumeOfPreviousD
     std::cout << "]";
 }
 
-void Tensor::incrementGradAt(const std::vector<int>& indices, double increment){
+void Tensor::incrementGradAt(uint locationIn1dArray, double increment) {
+    this->gradArrayPtr[locationIn1dArray] += increment;
+}
+
+void Tensor::incrementGradAt(const std::vector<int>& indices, double increment) {
     this->gradArrayPtr[indicesToLocationIn1dArray(indices)] += increment;
 }
+
 
 TensorMatMulProduct::TensorMatMulProduct(
     double* dataArrayPtr, double* gradArrayPtr,
     Tensor& leftParent, Tensor& rightParent) :
-        Tensor(dataArrayPtr, gradArrayPtr, dimensionsFromParents(leftParent, rightParent)), leftParent(&leftParent), rightParent(&rightParent) {}
+        Tensor(dataArrayPtr, gradArrayPtr, dimensionsFromParents(leftParent, rightParent)),
+        leftParent(&leftParent), rightParent(&rightParent) {
+            matMulParentsIntoSelf2d();
+        }
+
+TensorSum::TensorSum(
+    double* dataArrayPtr, double* gradArrayPtr, 
+    Tensor& leftParent, Tensor& rightParent) :
+        Tensor(dataArrayPtr, gradArrayPtr, leftParent.dimensions),
+        leftParent(&leftParent), rightParent(&rightParent) {
+            if (dimensions!= rightParent.dimensions){
+                std::cerr << "dimensions for summation must be equal, exiting\n";
+                exit(1);
+            }
+            sumParentsIntoSelf();
+        }
 
 
 std::vector<int> TensorMatMulProduct::dimensionsFromParents(const Tensor& leftParent, const Tensor& rightParent) const {
@@ -103,21 +131,17 @@ std::vector<int> TensorMatMulProduct::dimensionsFromParents(const Tensor& leftPa
 }
 
 
-void TensorMatMulProduct::assignNewParents(Tensor* leftHandSide, Tensor* rightHandSide) {
-    leftParent = leftHandSide, rightParent = rightHandSide;
-}
-
-void TensorMatMulProduct::matMul2dIntoSelf(Tensor& leftTensor, Tensor& rightTensor){
+void TensorMatMulProduct::matMulParentsIntoSelf2d(){
 
     TensorMatMulProduct& productTensor = *this;
 
-    if (leftTensor.dimensions.size() != 2 or rightTensor.dimensions.size() != 2){
+    if (leftParent->dimensions.size() != 2 or rightParent->dimensions.size() != 2){
         std::cerr << "only 2d for now, exiting\n";
         exit(1);
     }
-    if (leftTensor.dimensions[1] != rightTensor.dimensions[0] or
-        leftTensor.dimensions[0] != productTensor.dimensions[0] or
-        rightTensor.dimensions[1] != productTensor.dimensions[1]) {
+    if (leftParent->dimensions[1] != rightParent->dimensions[0] or
+        leftParent->dimensions[0] != productTensor.dimensions[0] or
+        rightParent->dimensions[1] != productTensor.dimensions[1]) {
         std::cerr << "wrong dims, exiting\n";
         exit(1);
     } 
@@ -126,14 +150,12 @@ void TensorMatMulProduct::matMul2dIntoSelf(Tensor& leftTensor, Tensor& rightTens
         for (int column=0; column < dimensions[1]; column++) {
             uint locationOfElementInProductTensor = indicesToLocationIn1dArray({row, column});
             dataArrayPtr[locationOfElementInProductTensor] = 0;
-            for (int dotProductIterator=0; dotProductIterator < leftTensor.dimensions[1]; dotProductIterator++) {
+            for (int dotProductIterator=0; dotProductIterator < leftParent->dimensions[1]; dotProductIterator++) {
                 dataArrayPtr[locationOfElementInProductTensor] +=
-                leftTensor.at({row, dotProductIterator}) * rightTensor.at({dotProductIterator, column});
+                leftParent->at({row, dotProductIterator}) * rightParent->at({dotProductIterator, column});
             }
         }
     }
-
-    productTensor.assignNewParents(&leftTensor, &rightTensor);
 }
 
 void TensorMatMulProduct::backwardFurther() const {
@@ -149,5 +171,19 @@ void TensorMatMulProduct::backwardFurther() const {
                     leftParent->at({row, dotProductIterator}) * gradArrayPtr[locationOfElementInProductTensor]); 
             }
         }
+    }
+}
+
+
+void TensorSum::sumParentsIntoSelf() {
+    for (int i = 0; i < length; i++) {
+        dataArrayPtr[i] = leftParent->atLocationIn1dArray(i) + rightParent->atLocationIn1dArray(i);
+    }
+}
+
+void TensorSum::backwardFurther() const {
+    for (int i = 0; i < length; i++) {
+        leftParent->incrementGradAt(i, gradArrayPtr[i]);
+        rightParent->incrementGradAt(i, gradArrayPtr[i]);
     }
 }

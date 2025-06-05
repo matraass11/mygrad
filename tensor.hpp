@@ -1,7 +1,5 @@
 #pragma once
 
-class TensorMatMulProduct;
-
 class Tensor {
 protected:
     double* dataArrayPtr;
@@ -14,17 +12,20 @@ public:
 public:
 
     Tensor( double* dataArrayPtr, double* gradArrayPtr,
-            const std::vector<int>& dimensionsVector);
+            const std::vector<int>& dimensionsVector );
 
     void print() const;
     void printGrad() const;
-    double at(const std::vector<int>& indices) const;
+    inline double at(const std::vector<int>& indices) const;
+    inline double atLocationIn1dArray(uint location) const;
     double gradAt(const std::vector<int>& indices) const;
     
-    virtual void backwardFurther() const {};
+    
+    void incrementGradAt(uint locationIn1dArray, double increment);
     void incrementGradAt(const std::vector<int>& indices, double increment);
-
     void setAllGradsTo(double newGrad);
+    
+    virtual void backwardFurther() const {};
 
 protected:
     size_t lengthFromDimensionsVector(const std::vector<int>& dimensionsVector) const;
@@ -41,14 +42,29 @@ public:
         Tensor& rightTensor, Tensor& leftTensor);
 
 protected:
-    Tensor* leftParent; 
-    Tensor* rightParent;       
+    Tensor* const leftParent; 
+    Tensor* const rightParent;       
     
     std::vector<int> dimensionsFromParents(const Tensor& leftParent, const Tensor& rightParent) const;
-    void assignNewParents(Tensor* leftParent, Tensor* rightParent);
     
 public:
-    void matMul2dIntoSelf(Tensor& leftTensor, Tensor& rightTensor);
+    void matMulParentsIntoSelf2d();
     void backwardFurther() const override;
     
 };  
+
+
+class TensorSum : public Tensor {
+public:
+    TensorSum (
+        double* dataArrayPtr, double* gradArrayPtr,
+        Tensor& rightTensor, Tensor& leftTensor );
+
+protected:
+    Tensor* const leftParent;
+    Tensor* const rightParent;
+
+public:
+    void sumParentsIntoSelf();
+    void backwardFurther() const override;
+};
