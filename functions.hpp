@@ -2,17 +2,19 @@
 
 class Tensor;
 
-struct function {
+class Function {
 public:
     virtual void forward() = 0;
     virtual void backward() = 0;
 };
 
-struct mat_mul2d : function {
-    Tensor* const leftInputTensor_p;
-    Tensor* const rightInputTensor_p;
-    Tensor* const outputTensor_p;
-    
+class mat_mul2d : Function {
+private:
+    Tensor& leftInputTensor;
+    Tensor& rightInputTensor;
+    Tensor& outputTensor;
+
+public:
     mat_mul2d(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
 
     void checkDimensions();

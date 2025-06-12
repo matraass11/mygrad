@@ -19,11 +19,8 @@ int main(){
 
     mat_mul2d m1(input.tensor, w1.tensor, p1.tensor), m2(s1.tensor, w2.tensor, p2.tensor);
     m1.forward(), m2.forward();
+    m2.backward(), m1.backward();
 
-    s2.tensor.print();
-
-    s2.tensor.setAllGradsTo(1);
-    s2.tensor.backwardFurther();
     w1.tensor.printGrad(); 
 
 } 
