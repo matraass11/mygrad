@@ -2,6 +2,7 @@
 #include <array>
 #include "tensor.hpp"
 #include "tensorStruct.hpp"
+#include "functions.hpp"
 
 int main(){
     
@@ -15,6 +16,10 @@ int main(){
     tensor_sum_s<2> s1(p1.tensor, b1.tensor);
     tensor_matmul_product_s<1> p2(s1.tensor, w2.tensor);
     tensor_sum_s<1> s2(p2.tensor, b2.tensor);
+
+    mat_mul2d m1(input.tensor, w1.tensor, p1.tensor), m2(s1.tensor, w2.tensor, p2.tensor);
+    m1.forward(), m2.forward();
+
     s2.tensor.print();
 
     s2.tensor.setAllGradsTo(1);
