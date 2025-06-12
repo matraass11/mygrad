@@ -1,14 +1,11 @@
-version = -std=c++14
+version=-std=c++14
 
-main: main.o tensor.o
-	clang++ main.o tensor.o -o main
+main: main.o tensor.o functions.o 
+	clang++ $^ -o main
 
-main.o: main.cpp
-	clang -c $(version) -g main.cpp
+$.o: $.cpp $.hpp
+	clang++ -c $(version) -g $^
 
-tensor.o: tensor.cpp
-	clang -c $(version) -g tensor.cpp 
-	
 clean:
 	rm *.o
 	
