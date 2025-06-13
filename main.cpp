@@ -18,8 +18,9 @@ int main(){
     tensor_sum_s<1> s2(p2.tensor, b2.tensor);
 
     mat_mul2d m1(input.tensor, w1.tensor, p1.tensor), m2(s1.tensor, w2.tensor, p2.tensor);
-    m1.forward(), m2.forward();
-    m2.backward(), m1.backward();
+    sum sum1(p1.tensor, b1.tensor, s1.tensor), sum2(p2.tensor, b2.tensor, s2.tensor);
+    m1.forward(), sum1.forward(), m2.forward(), sum2.forward();
+    sum2.backward(), m2.backward(), sum1.backward(), m1.backward();
 
     w1.tensor.printGrad(); 
 

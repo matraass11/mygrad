@@ -2,10 +2,13 @@
 #include "functions.hpp"
 #include "tensor.hpp"
 
-mat_mul2d::mat_mul2d(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor) :
+twoInputFunction::twoInputFunction(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor) : 
     leftInputTensor(leftInputTensor), rightInputTensor(rightInputTensor), outputTensor(outputTensor) {
-        checkDimensions();
+        // checkDimensions();
     }
+
+mat_mul2d::mat_mul2d(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor) :
+    twoInputFunction(leftInputTensor, rightInputTensor, outputTensor) {}
 
 void mat_mul2d::checkDimensions() {
     if (
@@ -54,5 +57,32 @@ void mat_mul2d::backward() {
                     leftInputTensor.at({row, dotProductIterator}) * currentGradPassedDown; 
             }
         }
+    }
+}
+
+
+sum::sum(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor) : 
+    twoInputFunction(leftInputTensor, rightInputTensor, outputTensor) {}
+
+void sum::forward() {
+    for (int i = 0; i < leftInputTensor.length; i++){
+        outputTensor.dataArrayPtr[i] = leftInputTensor.dataArrayPtr[i] + rightInputTensor.dataArrayPtr[i];
+    }
+}
+
+void sum::backward() {
+    for (int i = 0; i < leftInputTensor.length; i++){
+        leftInputTensor.gradArrayPtr[i] = rightInputTensor.gradArrayPtr[i] = outputTensor.gradArrayPtr[i];
+    }
+}
+
+void sum::checkDimensions() {
+    if (
+        leftInputTensor.dimensions != rightInputTensor.dimensions or
+        leftInputTensor.dimensions != outputTensor.dimensions or
+        rightInputTensor.dimensions != outputTensor.dimensions
+    ) {
+        std::cerr << "dimensions must be identical, exiting\n";
+        exit(1);
     }
 }
