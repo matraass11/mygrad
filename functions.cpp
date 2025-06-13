@@ -7,10 +7,10 @@ twoInputFunction::twoInputFunction(Tensor& leftInputTensor, Tensor& rightInputTe
         // checkDimensions();
     }
 
-mat_mul2d::mat_mul2d(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor) :
+MatMul2d::MatMul2d(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor) :
     twoInputFunction(leftInputTensor, rightInputTensor, outputTensor) {}
 
-void mat_mul2d::checkDimensions() {
+void MatMul2d::checkDimensions() {
     if (
         leftInputTensor.dimensions.size() != 2 or
         rightInputTensor.dimensions.size() != 2 or
@@ -30,7 +30,7 @@ void mat_mul2d::checkDimensions() {
     }
 }
 
-void mat_mul2d::forward() {
+void MatMul2d::forward() {
     for (int row=0; row < outputTensor.dimensions[0]; row++) {
         for (int column=0; column < outputTensor.dimensions[1]; column++) {
             double& currentElement = outputTensor.at({row, column}) = 0;
@@ -43,7 +43,7 @@ void mat_mul2d::forward() {
     }
 }
 
-void mat_mul2d::backward() {
+void MatMul2d::backward() {
     for (int row=0; row < outputTensor.dimensions[0]; row++) {
         for (int column=0; column < outputTensor.dimensions[1]; column++) {
             double& currentGradPassedDown = outputTensor.gradAt({row, column});
@@ -60,22 +60,22 @@ void mat_mul2d::backward() {
 }
 
 
-sum::sum(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor) : 
+Sum::Sum(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor) : 
     twoInputFunction(leftInputTensor, rightInputTensor, outputTensor) {}
 
-void sum::forward() {
+void Sum::forward() {
     for (int i = 0; i < leftInputTensor.length; i++){
         outputTensor.dataArrayPtr[i] = leftInputTensor.dataArrayPtr[i] + rightInputTensor.dataArrayPtr[i];
     }
 }
 
-void sum::backward() {
+void Sum::backward() {
     for (int i = 0; i < leftInputTensor.length; i++){
         leftInputTensor.gradArrayPtr[i] = rightInputTensor.gradArrayPtr[i] = outputTensor.gradArrayPtr[i];
     }
 }
 
-void sum::checkDimensions() {
+void Sum::checkDimensions() {
     if (
         leftInputTensor.dimensions != rightInputTensor.dimensions or
         leftInputTensor.dimensions != outputTensor.dimensions or

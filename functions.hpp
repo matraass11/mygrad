@@ -1,6 +1,6 @@
 #pragma once
 
-class Tensor;
+struct Tensor;
 
 class Function {
 public:
@@ -20,9 +20,9 @@ protected:
 };
 
 
-class mat_mul2d : twoInputFunction {
+class MatMul2d : twoInputFunction {
 public:
-    mat_mul2d(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
+    MatMul2d(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
     void forward() override;
     void backward() override;
 
@@ -30,9 +30,9 @@ protected:
     void checkDimensions() override;
 };
 
-class sum : twoInputFunction {
+class Sum : twoInputFunction {
 public:
-    sum(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
+    Sum(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
     void forward() override;
     void backward() override;
 

@@ -3,20 +3,20 @@
 struct Tensor;
 
 template<size_t length>
-struct tensor_s {
+struct Tensor_s {
 
     double dataArray[length];
     double gradArray[length];
     Tensor tensor;
 
-    tensor_s(const std::array<double, length>& dataArray, const std::vector<int>& dimensionsVector) :  
+    Tensor_s(const std::array<double, length>& dataArray, const std::vector<int>& dimensionsVector) :  
         dataArray{ }, gradArray{ }, 
         tensor(Tensor(this->dataArray, this->gradArray, dimensionsVector)) {
             std::copy(dataArray.begin(), dataArray.end(), this->dataArray);
             check_dimensions();
         }
     
-    tensor_s(const std::vector<int>& dimensionsVector) :  
+    Tensor_s(const std::vector<int>& dimensionsVector) :  
         dataArray{ }, gradArray{ },
         tensor(Tensor(this->dataArray, this->gradArray, dimensionsVector)) {}
 
@@ -33,13 +33,13 @@ struct tensor_s {
 };
 
 template<size_t length>
-struct tensor_matmul_product_s : public tensor_s<length> {
-    tensor_matmul_product_s(const Tensor& leftInputTensor, const Tensor& rightInputTensor) : 
-        tensor_s<length>({leftInputTensor.dimensions[0], rightInputTensor.dimensions[1]}) {}
+struct TensorMatmulProduct_s : public Tensor_s<length> {
+    TensorMatmulProduct_s(const Tensor& leftInputTensor, const Tensor& rightInputTensor) : 
+        Tensor_s<length>({leftInputTensor.dimensions[0], rightInputTensor.dimensions[1]}) {}
 };
 
 template<size_t length>
-struct tensor_sum_s : public tensor_s<length> {
-    tensor_sum_s(const Tensor& leftInputTensor, const Tensor& rightInputTensor) :
-    tensor_s<length>(leftInputTensor.dimensions) {}
+struct TensorSum_s : public Tensor_s<length> {
+    TensorSum_s(const Tensor& leftInputTensor, const Tensor& rightInputTensor) :
+    Tensor_s<length>(leftInputTensor.dimensions) {}
 };
