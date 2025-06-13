@@ -3,6 +3,7 @@
 #include "tensor.hpp"
 #include "tensorStruct.hpp"
 #include "functions.hpp"
+#include "helper.hpp"
 
 int main(){
     
@@ -20,8 +21,24 @@ int main(){
     mat_mul2d m1(input.tensor, w1.tensor, p1.tensor), m2(s1.tensor, w2.tensor, p2.tensor);
     sum sum1(p1.tensor, b1.tensor, s1.tensor), sum2(p2.tensor, b2.tensor, s2.tensor);
     m1.forward(), sum1.forward(), m2.forward(), sum2.forward();
+
+    s2.tensor.gradArrayPtr[0] = 1;
     sum2.backward(), m2.backward(), sum1.backward(), m1.backward();
 
-    w1.tensor.printGrad(); 
+    s2.tensor.print();
+    b1.tensor.printGrad(); 
 
+    const size_t size = 99999;
+    auto arr = normDistArray<size>();
+
+    double mean = std::accumulate(arr.begin(), arr.end(), 0.0) / size;
+    std::cout << mean << "\n";
+
+    // Now calculate the variance
+    auto variance_func = [&mean, &size](double accumulator, const double& val) {
+        return accumulator + ((val - mean)*(val - mean) / (size - 1));
+    };
+
+    double v = std::accumulate(arr.begin(), arr.end(), 0.0, variance_func);
+    std::cout << v << "\n";
 } 

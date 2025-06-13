@@ -37,8 +37,7 @@ void mat_mul2d::forward() {
 
             for (int dotProductIterator=0; dotProductIterator < leftInputTensor.dimensions[1]; dotProductIterator++) {
                 currentElement +=
-                    leftInputTensor.at({row, dotProductIterator}) * 
-                    rightInputTensor.at({dotProductIterator, column});
+                    leftInputTensor.at({row, dotProductIterator}) * rightInputTensor.at({dotProductIterator, column});
             }
         }
     }

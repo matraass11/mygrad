@@ -4,9 +4,9 @@ class Tensor;
 
 class Function {
 public:
-    // virtual void forward() = 0;
-    // virtual void backward() = 0;
-    // virtual void checkDimensions() = 0;
+    virtual void forward() = 0;
+    virtual void backward() = 0;
+    virtual void checkDimensions() = 0;
 };
 
 class twoInputFunction : Function {
@@ -16,28 +16,28 @@ protected:
     Tensor& outputTensor;
 
     twoInputFunction(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
-    // virtual void checkDimensions() = 0;
+    virtual void checkDimensions() = 0;
 };
 
 
 class mat_mul2d : twoInputFunction {
 public:
     mat_mul2d(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
-    void forward();
-    void backward();
+    void forward() override;
+    void backward() override;
 
 protected:
-    void checkDimensions();
+    void checkDimensions() override;
 };
 
 class sum : twoInputFunction {
 public:
     sum(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
-    void forward();
-    void backward();
+    void forward() override;
+    void backward() override;
 
 protected:
-    void checkDimensions();
+    void checkDimensions() override;
 };
 
 
