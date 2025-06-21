@@ -1,9 +1,12 @@
 #include <iostream>
 #include <array>
+#include <fstream>
+
 #include "tensor.hpp"
 #include "tensorStruct.hpp"
 #include "functions.hpp"
 #include "helper.hpp"
+#include "model.hpp"
 
 int main(){
     
@@ -28,16 +31,17 @@ int main(){
     s2.tensor.print();
     b1.tensor.printGrad(); 
 
-    const size_t size = 99999;
-    auto arr = normDistArray<size>();
+    // Model m;
+    // m.print();
+    // m.save("model");
 
-    double mean = std::accumulate(arr.begin(), arr.end(), 0.0) / size;
-    std::cout << mean << "\n";
+    Model model2("model");
+    model2.print();
+    
 
-    auto variance_func = [&mean, &size](double accumulator, const double& val) {
-        return accumulator + ((val - mean)*(val - mean) / (size - 1));
-    };
 
-    double v = std::accumulate(arr.begin(), arr.end(), 0.0, variance_func);
-    std::cout << v << "\n";
+
+
+
+    // std::cout << v << "\n";
 } 

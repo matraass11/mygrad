@@ -16,7 +16,6 @@ protected:
     Tensor& outputTensor;
 
     twoInputFunction(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
-    virtual void checkDimensions() = 0;
 };
 
 
@@ -39,6 +38,28 @@ public:
 protected:
     void checkDimensions() override;
 };
+
+
+class LossFunction : Function {
+protected:
+    Tensor& dataTensor;
+    Tensor& modelOutputTensor;
+    Tensor& lossTensor;
+
+    LossFunction(Tensor& dataTensor, Tensor& modelOutputTensor, Tensor& lossTensor);
+};
+
+
+class MseLoss : LossFunction {
+public: 
+    MseLoss(Tensor& dataTensor, Tensor& modelOutputTensor, Tensor& lossTensor); 
+    void forward() override;
+    void backward() override;
+
+protected:
+    void checkDimensions() override;
+};
+
 
 
 // tensors:

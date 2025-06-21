@@ -1,6 +1,6 @@
 version=-std=c++14
 
-main: main.o tensor.o functions.o helper.o
+main: main.o tensor.o functions.o helper.o model.o
 	clang++ $^ -o main
 
 $.o: $.cpp $.hpp

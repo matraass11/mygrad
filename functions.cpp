@@ -85,3 +85,35 @@ void Sum::checkDimensions() {
         exit(1);
     }
 }
+
+LossFunction::LossFunction(Tensor& dataTensor, Tensor& modelOutputTensor, Tensor& lossTensor) : 
+    dataTensor(dataTensor), modelOutputTensor(modelOutputTensor), lossTensor(lossTensor) {}
+
+MseLoss::MseLoss(Tensor& dataTensor, Tensor& modelOutputTensor, Tensor& lossTensor) :
+    LossFunction(dataTensor, modelOutputTensor, lossTensor) {}
+
+void MseLoss::checkDimensions() {
+    if (dataTensor.dimensions != modelOutputTensor.dimensions or lossTensor.length != 1) {
+        std::cerr << "dimensions error for MseLoss, exiting\n";
+        exit(1);
+    }
+}
+
+void MseLoss::forward() {
+    double loss = 0;
+    double error;
+    for (int i = 0; i < dataTensor.length; i++) {
+        error = (dataTensor.dataArrayPtr[i] - modelOutputTensor.dataArrayPtr[i]);
+        loss += error*error;
+    }
+    loss /= dataTensor.length;
+    lossTensor.dataArrayPtr[0] = loss;
+}
+
+void MseLoss::backward() {
+    // assume the grad of the loss is always 1
+    for (int i = 0; i < dataTensor.length; i++) {
+        double difference = dataTensor.dataArrayPtr[i] - modelOutputTensor.dataArrayPtr[i];
+        modelOutputTensor.gradArrayPtr[i] += (difference * -2/dataTensor.length);
+    }
+}
