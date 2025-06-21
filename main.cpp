@@ -2,11 +2,13 @@
 #include <array>
 #include <fstream>
 
-#include "tensor.hpp"
-#include "tensorStruct.hpp"
-#include "functions.hpp"
-#include "helper.hpp"
-#include "model.hpp"
+#include "src/tensor.hpp"
+#include "src/tensorStruct.hpp"
+#include "src/functions.hpp"
+#include "src/helper.hpp"
+#include "src/model.hpp"
+
+#define MODELS_DIR "../models/"
 
 int main(){
     
@@ -28,14 +30,14 @@ int main(){
     s2.tensor.gradArrayPtr[0] = 1;
     sum2.backward(), m2.backward(), sum1.backward(), m1.backward();
 
-    s2.tensor.print();
-    b1.tensor.printGrad(); 
+    // s2.tensor.print();
+    // b1.tensor.printGrad(); 
 
     // Model m;
     // m.print();
-    // m.save("model");
+    // m.save(MODELS_DIR "/model");
 
-    Model model2("model");
+    Model model2(MODELS_DIR "/model");
     model2.print();
     
 
