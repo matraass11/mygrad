@@ -2,6 +2,10 @@
 *.dSYM
 
 *.o
+
+.*
+!.gitignore
+
 main
 test.cpp
 build
