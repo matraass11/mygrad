@@ -3,12 +3,17 @@
 #include "types.hpp"
 
 struct Tensor {
-    dtype* dataArrayPtr;
-    dtype* gradArrayPtr;
+    dtype* data;
+    dtype* grads;
     const std::vector<int> dimensions;
     const size_t length;
 
-    Tensor( dtype* dataArrayPtr, dtype* gradArrayPtr,
+    Tensor( dtype* data, dtype* grads,
+            const std::vector<int>& dimensionsVector );
+    
+    Tensor( const std::vector<int>& dimensionsVector );
+
+    Tensor( const std::vector<dtype>& dataVector,
             const std::vector<int>& dimensionsVector );
 
     void print() const;
@@ -20,5 +25,5 @@ struct Tensor {
     int indicesToLocationIn1dArray(const std::vector<int>& indices) const;
 
 protected:    
-    void printRecursively(uint start, uint dimension, uint volumeOfPreviousDimension, bool printGrad) const;
+    void printRecursively(int start, int dimension, int volumeOfPreviousDimension, bool printGrad) const;
 };

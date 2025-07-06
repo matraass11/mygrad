@@ -2,12 +2,31 @@
 #include <iostream>
 #include "tensor.hpp"
 
-Tensor::Tensor( dtype* dataArrayPtr, dtype* gradArrayPtr,
+Tensor::Tensor( dtype* data, dtype* grads,
                 const std::vector<int>& dimensionsVector) :  
-    dataArrayPtr(dataArrayPtr), 
-    gradArrayPtr(gradArrayPtr),
+    data(data), 
+    grads(grads),
     dimensions(dimensionsVector),
     length(lengthFromDimensionsVector(dimensions)) {}
+
+Tensor::Tensor( const std::vector<int>& dimensionsVector ) : 
+    Tensor(
+        new dtype[lengthFromDimensionsVector(dimensionsVector)], 
+        new dtype[lengthFromDimensionsVector(dimensionsVector)],
+        dimensionsVector
+    ) {}
+
+Tensor::Tensor( const std::vector<dtype>& dataVector,
+                const std::vector<int>& dimensionsVector ) :
+    Tensor(
+        [&]() {
+            dtype* data = new dtype[lengthFromDimensionsVector(dimensionsVector)];
+            std::copy(dataVector.begin(), dataVector.end(), data);
+            return data;
+        }(), // lambda for copying data into the tensor
+        new dtype[lengthFromDimensionsVector(dimensionsVector)],
+        dimensionsVector
+    ) {}
 
 
 void Tensor::print() const {
@@ -21,17 +40,17 @@ void Tensor::printGrad() const {
 }
 
 dtype& Tensor::at(const std::vector<int>& indices) {
-    return dataArrayPtr[indicesToLocationIn1dArray(indices)];
+    return data[indicesToLocationIn1dArray(indices)];
 }
 
 dtype& Tensor::gradAt(const std::vector<int>& indices) {
-    return gradArrayPtr[indicesToLocationIn1dArray(indices)];
+    return grads[indicesToLocationIn1dArray(indices)];
 }
 
 size_t Tensor::lengthFromDimensionsVector(const std::vector<int>& dimensionsVector) const {
     size_t length = 1;
-    for (int i=0; i<dimensions.size(); i++){
-        length *= dimensions[i];
+    for (int i=0; i<dimensionsVector.size(); i++){
+        length *= dimensionsVector[i];
     }
     return length;
 }
@@ -54,17 +73,17 @@ inline int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) c
     return locationOfElementInDataArray;
 }
 
-void Tensor::printRecursively(uint start, uint dimension, uint volumeOfPreviousDimension, bool printGrad) const {
-    uint increment = volumeOfPreviousDimension / dimensions[dimension];
-    uint lastSubDimensionEntry = start + increment*(dimensions[dimension] - 1); 
+void Tensor::printRecursively(int start, int dimension, int volumeOfPreviousDimension, bool printGrad) const {
+    int increment = volumeOfPreviousDimension / dimensions[dimension];
+    int lastSubDimensionEntry = start + increment*(dimensions[dimension] - 1); 
     std::cout << "[";
     for (int i=start; i <= lastSubDimensionEntry; i+=increment){
         if (increment==1){
             if (printGrad) {
-                std::cout << gradArrayPtr[i];
+                std::cout << grads[i];
             }
             else {
-                std::cout << dataArrayPtr[i];
+                std::cout << data[i];
             }
         }
         else {

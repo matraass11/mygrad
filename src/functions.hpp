@@ -11,27 +11,15 @@ public:
 
 class twoInputFunction : Function {
 protected:
-    Tensor& leftInputTensor;
-    Tensor& rightInputTensor;
-    Tensor& outputTensor;
-
-    twoInputFunction(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
+    Tensor* leftInputTensor = nullptr;
+    Tensor* rightInputTensor = nullptr;
+    Tensor* outputTensor = nullptr;
 };
 
-
-class MatMul2d : twoInputFunction {
-public:
-    MatMul2d(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
-    void forward() override;
-    void backward() override;
-
-protected:
-    void checkDimensions() override;
-};
 
 class Sum : twoInputFunction {
 public:
-    Sum(Tensor& leftInputTensor, Tensor& rightInputTensor, Tensor& outputTensor);
+    Sum();
     void forward() override;
     void backward() override;
 
@@ -42,17 +30,17 @@ protected:
 
 class LossFunction : Function {
 protected:
-    Tensor& dataTensor;
-    Tensor& modelOutputTensor;
-    Tensor& lossTensor;
+    Tensor* dataTensor = nullptr;
+    Tensor* modelOutputTensor = nullptr;
+    Tensor* lossTensor = nullptr;
 
-    LossFunction(Tensor& dataTensor, Tensor& modelOutputTensor, Tensor& lossTensor);
+    LossFunction();
 };
 
 
 class MseLoss : LossFunction {
 public: 
-    MseLoss(Tensor& dataTensor, Tensor& modelOutputTensor, Tensor& lossTensor); 
+    MseLoss(); 
     void forward() override;
     void backward() override;
 
