@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tensor.hpp" 
+#include "helper.hpp"
 
 struct LinearLayer {
     Tensor weights;
@@ -8,7 +9,8 @@ struct LinearLayer {
     Tensor* inputTensor = nullptr;
     Tensor* outputTensor = nullptr;
 
-    LinearLayer( int inFeatures, int outFeatures, const std::vector<dtype>& data = {});
+    LinearLayer( int inFeatures, int outFeatures);
+    LinearLayer( int inFeatures, int outFeatures, const std::vector<dtype>& data);
     
     void forward( Tensor& inputTensor, Tensor& outputTensor );
     void checkDimensions( Tensor& inputTensor, Tensor& outputTensor  );

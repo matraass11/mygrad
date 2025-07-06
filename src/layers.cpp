@@ -1,10 +1,16 @@
 #include <iostream>
 #include "layers.hpp"
 
+LinearLayer::LinearLayer( int inFeatures, int outFeatures) : //default init
+    LinearLayer( inFeatures, outFeatures,
+                 KaimingWeightsVector(inFeatures, outFeatures) ) {}
+
+
 LinearLayer::LinearLayer( int inFeatures, int outFeatures,
                           const std::vector<dtype>& data ) : //this is for testing
     weights( data, { inFeatures, outFeatures } ),
     biases( {}, {1, outFeatures} ) {}
+
 
 void LinearLayer::forward( Tensor& inputTensor, Tensor& outputTensor ) {
     
