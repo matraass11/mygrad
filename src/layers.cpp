@@ -1,15 +1,15 @@
 #include <iostream>
 #include "layers.hpp"
 
-LinearLayer::LinearLayer( int inFeatures, int outFeatures) : //default init
+LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures) : //default init
     LinearLayer( inFeatures, outFeatures,
                  KaimingWeightsVector(inFeatures, outFeatures) ) {}
 
 
-LinearLayer::LinearLayer( int inFeatures, int outFeatures,
+LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures,
                           const std::vector<dtype>& data ) : //this is for testing
     weights( data, { inFeatures, outFeatures } ),
-    biases( {}, {1, outFeatures} ) {}
+    biases( std::vector<dtype>(outFeatures, 0), {1, outFeatures} ) {}
 
 
 void LinearLayer::forward( Tensor& inputTensor, Tensor& outputTensor ) {
@@ -40,9 +40,9 @@ void LinearLayer::matmulWithBias_backward() {
 
                 weights.gradAt({dotProductIterator, column}) += 
                     inputTensor->at({row, dotProductIterator}) * currentGradPassedDown; 
-
-                biases.gradAt({0, column}) += currentGradPassedDown;
-            }
+                }
+                
+            biases.gradAt({0, column}) += currentGradPassedDown;
         }
     }
 }

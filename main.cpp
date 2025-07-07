@@ -9,19 +9,15 @@
 #define MODELS_DIR "../models/"
 
 int main(){
-    LinearLayer l1( 4, 2 );
-    LinearLayer l2( 2, 1, {5, 6});
 
+    Model m;
+
+    m.print();
 
     Tensor input({2, 2, 3, 4}, {1, 4});
-    Tensor l1out( {}, {1, 2});
-    Tensor output( {}, {1, 1});
-    l1.forward(input, l1out);
-    l2.forward(l1out, output);
-    
+    Tensor output = m.forward(input);
+
     output.print();
-    output.grads[0] = 1;
-    l2.backward();
-    l1.backward();
-    l2.weights.printGrad();
+    m.backward();
+    m.printGrads();
 } 

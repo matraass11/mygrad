@@ -5,23 +5,23 @@
 struct Tensor {
     dtype* data;
     dtype* grads;
-    const std::vector<int> dimensions;
-    const size_t length;
+    std::vector<size_t> dimensions;
+    size_t length;
 
     Tensor( dtype* data, dtype* grads,
-            const std::vector<int>& dimensionsVector );
+            const std::vector<size_t>& dimensionsVector );
     
-    Tensor( const std::vector<int>& dimensionsVector );
+    Tensor( const std::vector<size_t>& dimensionsVector );
 
     Tensor( const std::vector<dtype>& dataVector,
-            const std::vector<int>& dimensionsVector );
+            const std::vector<size_t>& dimensionsVector );
 
     void print() const;
     void printGrad() const;
     dtype& at(const std::vector<int>& indices);
     dtype& gradAt(const std::vector<int>& indices);
 
-    size_t lengthFromDimensionsVector(const std::vector<int>& dimensionsVector) const;
+    int lengthFromDimensionsVector(const std::vector<size_t>& dimensionsVector) const;
     int indicesToLocationIn1dArray(const std::vector<int>& indices) const;
 
 protected:    

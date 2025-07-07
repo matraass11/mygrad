@@ -3,13 +3,13 @@
 #include "tensor.hpp"
 
 Tensor::Tensor( dtype* data, dtype* grads,
-                const std::vector<int>& dimensionsVector) :  
+                const std::vector<size_t>& dimensionsVector) :  
     data(data), 
     grads(grads),
     dimensions(dimensionsVector),
     length(lengthFromDimensionsVector(dimensions)) {}
 
-Tensor::Tensor( const std::vector<int>& dimensionsVector ) : 
+Tensor::Tensor( const std::vector<size_t>& dimensionsVector ) : 
     Tensor(
         new dtype[lengthFromDimensionsVector(dimensionsVector)], 
         new dtype[lengthFromDimensionsVector(dimensionsVector)],
@@ -17,7 +17,7 @@ Tensor::Tensor( const std::vector<int>& dimensionsVector ) :
     ) {}
 
 Tensor::Tensor( const std::vector<dtype>& dataVector,
-                const std::vector<int>& dimensionsVector ) :
+                const std::vector<size_t>& dimensionsVector ) :
     Tensor(
         [&]() {
             dtype* data = new dtype[lengthFromDimensionsVector(dimensionsVector)];
@@ -26,7 +26,14 @@ Tensor::Tensor( const std::vector<dtype>& dataVector,
         }(), // lambda for copying data into the tensor
         new dtype[lengthFromDimensionsVector(dimensionsVector)],
         dimensionsVector
-    ) {}
+    ) {
+        if (dataVector.size() != length) {
+            std::cerr << "tensor initialized with vector of wrong size. exiting\n"; 
+            // might remove later because this requires proper initialization even of an empty vector
+            std::cerr << dataVector.size() << " != " << length << "\n";
+            exit(1);
+        }
+    }
 
 
 void Tensor::print() const {
@@ -47,7 +54,7 @@ dtype& Tensor::gradAt(const std::vector<int>& indices) {
     return grads[indicesToLocationIn1dArray(indices)];
 }
 
-size_t Tensor::lengthFromDimensionsVector(const std::vector<int>& dimensionsVector) const {
+int Tensor::lengthFromDimensionsVector(const std::vector<size_t>& dimensionsVector) const {
     size_t length = 1;
     for (int i=0; i<dimensionsVector.size(); i++){
         length *= dimensionsVector[i];

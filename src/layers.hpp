@@ -9,8 +9,8 @@ struct LinearLayer {
     Tensor* inputTensor = nullptr;
     Tensor* outputTensor = nullptr;
 
-    LinearLayer( int inFeatures, int outFeatures);
-    LinearLayer( int inFeatures, int outFeatures, const std::vector<dtype>& data);
+    LinearLayer( size_t inFeatures, size_t outFeatures);
+    LinearLayer( size_t inFeatures, size_t outFeatures, const std::vector<dtype>& data);
     
     void forward( Tensor& inputTensor, Tensor& outputTensor );
     void checkDimensions( Tensor& inputTensor, Tensor& outputTensor  );
