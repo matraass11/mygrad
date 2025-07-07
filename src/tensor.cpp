@@ -2,37 +2,26 @@
 #include <iostream>
 #include "tensor.hpp"
 
-Tensor::Tensor( dtype* data, dtype* grads,
-                const std::vector<size_t>& dimensionsVector) :  
-    data(data), 
-    grads(grads),
-    dimensions(dimensionsVector),
-    length(lengthFromDimensionsVector(dimensions)) {}
-
 Tensor::Tensor( const std::vector<size_t>& dimensionsVector ) : 
-    Tensor(
-        new dtype[lengthFromDimensionsVector(dimensionsVector)], 
-        new dtype[lengthFromDimensionsVector(dimensionsVector)],
-        dimensionsVector
-    ) {}
+    length(lengthFromDimensionsVector(dimensionsVector)),
+    data(std::make_unique<dtype[]>(length)),
+    grads(std::make_unique<dtype[]>(length)),
+    dimensions(dimensionsVector) {}
 
 Tensor::Tensor( const std::vector<dtype>& dataVector,
-                const std::vector<size_t>& dimensionsVector ) :
-    Tensor(
-        [&]() {
-            dtype* data = new dtype[lengthFromDimensionsVector(dimensionsVector)];
-            std::copy(dataVector.begin(), dataVector.end(), data);
-            return data;
-        }(), // lambda for copying data into the tensor
-        new dtype[lengthFromDimensionsVector(dimensionsVector)],
-        dimensionsVector
-    ) {
+                const std::vector<size_t>& dimensionsVector ) : 
+                
+    Tensor(dimensionsVector) 
+
+    {
+        std::copy(dataVector.begin(), dataVector.end(), data);
+
         if (dataVector.size() != length) {
             std::cerr << "tensor initialized with vector of wrong size. exiting\n"; 
-            // might remove later because this requires proper initialization even of an empty vector
-            std::cerr << dataVector.size() << " != " << length << "\n";
-            exit(1);
-        }
+                // might remove later because this requires proper initialization even of an empty vector
+                std::cerr << dataVector.size() << " != " << length << "\n";
+                exit(1);
+            }
     }
 
 

@@ -3,10 +3,10 @@
 #include "types.hpp"
 
 struct Tensor {
-    dtype* data;
-    dtype* grads;
-    std::vector<size_t> dimensions;
     size_t length;
+    std::vector<size_t> dimensions;
+    std::unique_ptr<dtype[]> data;
+    std::unique_ptr<dtype[]> grads;
 
     Tensor( dtype* data, dtype* grads,
             const std::vector<size_t>& dimensionsVector );
