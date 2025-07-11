@@ -2,11 +2,7 @@
 #include "model.hpp"
 #include "helper.hpp"
 
-Model::Model(size_t batchSize) : 
-    l1out( {batchSize, NEURONS_N} ), 
-    l2out( {batchSize, NEURONS_N} ),
-    l3out( {batchSize, 1} ),
-    currentBatchSize(batchSize) {}
+Model::Model() {}
 
 void Model::save(const std::string& filename) {
     std::ofstream file(filename, std::ios::binary);
@@ -15,8 +11,8 @@ void Model::save(const std::string& filename) {
     }
 
     for (const Tensor* const parameterTensor : parameters) {
-        file.write(reinterpret_cast<const char*>(parameterTensor->data), parameterTensor->length*sizeof(dtype));
-        file.write(reinterpret_cast<const char*>(parameterTensor->grads), parameterTensor->length*sizeof(dtype));
+        file.write(reinterpret_cast<char*>(parameterTensor->data.get()), parameterTensor->length*sizeof(dtype));
+        file.write(reinterpret_cast<char*>(parameterTensor->grads.get()), parameterTensor->length*sizeof(dtype));
     }
 }
 
@@ -27,8 +23,8 @@ void Model::load(const std::string& filename) {
     }
 
     for (Tensor* const parameterTensor : parameters) {
-        file.read(reinterpret_cast<char*>(parameterTensor->data), parameterTensor->length*sizeof(dtype));
-        file.read(reinterpret_cast<char*>(parameterTensor->grads), parameterTensor->length*sizeof(dtype));
+        file.read(reinterpret_cast<char*>(parameterTensor->data.get()), parameterTensor->length*sizeof(dtype));
+        file.read(reinterpret_cast<char*>(parameterTensor->grads.get()), parameterTensor->length*sizeof(dtype));
     }
 }
 
@@ -42,30 +38,19 @@ void Model::printGrads() {
     for (const Tensor* const tensor: parameters){
         tensor->printGrad();
     }
-
-}
-
-void Model::changeBatchSize(size_t newBatchSize){
-    l1out = Tensor( {newBatchSize, NEURONS_N} );
-    l2out = Tensor( {newBatchSize, NEURONS_N} );
-    l3out = Tensor( {newBatchSize, 1} );
 }
 
 
 Tensor& Model::forward(Tensor& x) {
-    if (x.dimensions[0] != currentBatchSize){
-        changeBatchSize(x.dimensions[0]);
-    }
-
-    l1.forward(x, l1out);
-    l2.forward(l1out, l2out);
-    l3.forward(l2out, l3out);
-    return l3out;
+    l1.forward(x);
+    l2.forward(l1.outputTensor);
+    l3.forward(l2.outputTensor);
+    return l3.outputTensor;
 };
 
 void Model::backward() {
-    for (int i = 0; i < l3out.length; i++) {
-        l3out.grads[i] = 1;
+    for (int i = 0; i < l3.outputTensor.length; i++) { // only for testing
+        l3.outputTensor.grads[i] = 1;
     }
     l3.backward();
     l2.backward();

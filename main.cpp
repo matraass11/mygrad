@@ -15,7 +15,7 @@ int main(){
     m.print();
 
     Tensor input({2, 2, 3, 4}, {1, 4});
-    Tensor output = m.forward(input);
+    Tensor& output = m.forward(input);
 
     output.print();
     m.backward();
