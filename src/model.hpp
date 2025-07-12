@@ -10,7 +10,9 @@
 
 class Model {
     LinearLayer l1 = LinearLayer( INPUT_SIZE, NEURONS_N, std::vector<dtype>(INPUT_SIZE*NEURONS_N, 1) );
+    ReLU rl1 = ReLU();
     LinearLayer l2 = LinearLayer( NEURONS_N, NEURONS_N, std::vector<dtype>(NEURONS_N*NEURONS_N, 1) );
+    ReLU rl2 = ReLU();
     LinearLayer l3 = LinearLayer( NEURONS_N, 1, std::vector<dtype>(NEURONS_N, 1) );
 
     std::array<Tensor *const, 6> parameters {

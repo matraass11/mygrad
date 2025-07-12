@@ -14,7 +14,7 @@ Tensor::Tensor( const std::vector<dtype>& dataVector,
     Tensor(dimensionsVector) 
 
     {
-        std::copy(dataVector.begin(), dataVector.end(), data);
+        std::copy(dataVector.begin(), dataVector.end(), data.get());
 
         if (dataVector.size() != length) {
             std::cerr << "tensor initialized with vector of wrong size. exiting\n"; 

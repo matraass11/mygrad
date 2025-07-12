@@ -43,8 +43,10 @@ void Model::printGrads() {
 
 Tensor& Model::forward(Tensor& x) {
     l1.forward(x);
-    l2.forward(l1.outputTensor);
-    l3.forward(l2.outputTensor);
+    rl1.forward(l1.outputTensor);
+    l2.forward(rl1.outputTensor);
+    rl2.forward(l2.outputTensor);
+    l3.forward(rl2.outputTensor);
     return l3.outputTensor;
 };
 
@@ -53,7 +55,9 @@ void Model::backward() {
         l3.outputTensor.grads[i] = 1;
     }
     l3.backward();
+    rl2.backward();
     l2.backward();
+    rl1.backward();
     l1.backward();
 }
 

@@ -1,13 +1,26 @@
 #include <iostream>
 #include "layers.hpp"
 
+static const size_t defaultBatchSize = 32;
+
+Layer::Layer(const std::vector<size_t> outDimensions) : outputTensor(outDimensions) {}
+
+inline void Layer::setInputTensorPointer( Tensor* inputTensor) {
+    this->inputTensor = inputTensor;
+}
+
+inline void Layer::adjustOutTensorDimensions( const std::vector<size_t>& newDimensions ) {
+    outputTensor = Tensor( newDimensions );
+}
+
+
+
 LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures,
                           const std::vector<dtype>& data ) : //this is for testing
+    Layer( {defaultBatchSize, outFeatures} ),
 
     weights( data, { inFeatures, outFeatures } ), 
-    biases( std::vector<dtype>(outFeatures, 0), {1, outFeatures} ),
-
-    outputTensor( {default_batch_size, outFeatures} ) {}
+    biases( std::vector<dtype>(outFeatures, 0), {1, outFeatures} ) {}
     
 
 LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures) : //default init
@@ -50,7 +63,7 @@ void LinearLayer::matmulWithBias_backward() {
     }
 }
 
-void LinearLayer::checkDimensions(Tensor& inputTensor) {
+void LinearLayer::checkDimensions(const Tensor& inputTensor) {
     if (
         inputTensor.dimensions.size() != 2
     ) {
@@ -68,16 +81,8 @@ void LinearLayer::checkDimensions(Tensor& inputTensor) {
     if (
         inputTensor.dimensions[0] != outputTensor.dimensions[0]
     ) {
-        adjustOutTensorDimensions(inputTensor.dimensions[0]);
+        adjustOutTensorDimensions( {inputTensor.dimensions[0], weights.dimensions[1]} );
     }
-}
-
-inline void LinearLayer::adjustOutTensorDimensions(size_t newRowsN) {
-    outputTensor = Tensor( {newRowsN, weights.dimensions[1]});
-}
-
-inline void LinearLayer::setInputTensorPointer( Tensor* inputTensor) {
-    this->inputTensor = inputTensor;
 }
 
 void LinearLayer::matmulWithBias() {
@@ -92,4 +97,27 @@ void LinearLayer::matmulWithBias() {
             }
         }
     }
+}
+
+void ReLU::forward( Tensor& inpTensor ) {
+    checkDimensions( inpTensor );
+    setInputTensorPointer( &inpTensor );
+
+    for (int i = 0; i < inputTensor->length; i++) {
+        outputTensor.data[i] = (inputTensor->data[i] >= 0 ? inputTensor->data[i] : 0);
+    }
+}
+
+void ReLU::checkDimensions( const Tensor& inpTensor ) {
+    if (inpTensor.dimensions != outputTensor.dimensions ) {
+        adjustOutTensorDimensions(inpTensor.dimensions);
+    } 
+}
+
+void ReLU::backward() {
+    for (int i = 0; i < inputTensor->length; i++) {
+        inputTensor->grads[i] = (inputTensor->data[i] >= 0 ? outputTensor.grads[i] : 0);
+    }
+
+    setInputTensorPointer(nullptr);
 }
