@@ -18,11 +18,14 @@ struct Tensor {
 
     void print() const;
     void printGrad() const;
-    dtype& at(const std::vector<int>& indices);
-    dtype& gradAt(const std::vector<int>& indices);
+    inline dtype& at(const std::vector<int>& indices);
+    inline dtype& gradAt(const std::vector<int>& indices);
 
-    int lengthFromDimensionsVector(const std::vector<size_t>& dimensionsVector) const;
+    inline int lengthFromDimensionsVector(const std::vector<size_t>& dimensionsVector) const;
     int indicesToLocationIn1dArray(const std::vector<int>& indices) const;
+
+    Tensor exp();
+    Tensor max(int maxAlongDimension);
 
 protected:    
     void printRecursively(int start, int dimension, int volumeOfPreviousDimension, bool printGrad) const;

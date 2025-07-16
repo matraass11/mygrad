@@ -51,7 +51,7 @@ int Tensor::lengthFromDimensionsVector(const std::vector<size_t>& dimensionsVect
     return length;
 }
 
-inline int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
+int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
     if (indices.size() != dimensions.size()){
         std::cerr << "wrong indices, exiting\n";
         exit(1);
@@ -91,3 +91,37 @@ void Tensor::printRecursively(int start, int dimension, int volumeOfPreviousDime
     }
     std::cout << "]";
 }
+
+
+Tensor Tensor::exp() {
+    Tensor expedTensor(this->dimensions);
+    for (int i = 0; i < length; i++) {
+        expedTensor.data[i] = std::exp(this->data[i]);
+    }
+    return expedTensor;
+}
+
+Tensor Tensor::max(int maxAlongDimension) {
+    std::vector<size_t> dimensionsOfMaxTensor = dimensions;
+    dimensionsOfMaxTensor[maxAlongDimension] = 1;
+    Tensor maxTensor( std::vector<dtype>(lengthFromDimensionsVector(dimensionsOfMaxTensor), INT_MIN), dimensionsOfMaxTensor );
+    // keeping the previous line because i must resist premature optimization
+
+    size_t offsetBetweenElementsOfThisDim = 1;
+    for (int i = maxAlongDimension+1; i < dimensions.size(); i++) {
+        offsetBetweenElementsOfThisDim *= dimensions[i];
+    }
+    size_t totalSizeOfThisDim = dimensions[maxAlongDimension] * offsetBetweenElementsOfThisDim;
+
+    std::cout << "smaller offset: " << offsetBetweenElementsOfThisDim << ", bigger offset: " << totalSizeOfThisDim << "\n";
+
+    int locInMax;
+    for (int i = 0; i < length; i++) {
+        locInMax = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
+        if (this->data[i] > maxTensor.data[locInMax]) {
+            maxTensor.data[locInMax] = this->data[i];
+        }
+    }
+
+    return maxTensor;
+}   
