@@ -2,16 +2,17 @@
 #include <iostream>
 #include "tensor.hpp"
 
-Tensor::Tensor( const std::vector<size_t>& dimensionsVector ) : 
-    length(lengthFromDimensionsVector(dimensionsVector)),
+Tensor::Tensor( const std::vector<size_t>& dimensions ) : 
+    length(lengthFromDimensions(dimensions)),
+    dimensions(dimensions),
+    strides(stridesFromDimensions(dimensions)),
     data(std::make_unique<dtype[]>(length)),
-    grads(std::make_unique<dtype[]>(length)),
-    dimensions(dimensionsVector) {}
+    grads(std::make_unique<dtype[]>(length)) {}
 
 Tensor::Tensor( const std::vector<dtype>& dataVector,
-                const std::vector<size_t>& dimensionsVector ) : 
+                const std::vector<size_t>& dimensions ) : 
                 
-    Tensor(dimensionsVector) 
+    Tensor(dimensions) 
 
     {
         std::copy(dataVector.begin(), dataVector.end(), data.get());
@@ -26,12 +27,22 @@ Tensor::Tensor( const std::vector<dtype>& dataVector,
 
 
 void Tensor::print() const {
-    printRecursively(0, 0, length, false);
+    if (dimensions.size() > 2) {
+        printRecursively(0, 0, true, false);
+    }
+    else {
+        printRecursively(0, 0, false, false);
+    }
     std::cout << "\n";
 }
 
 void Tensor::printGrad() const {
-    printRecursively(0, 0, length, true);
+    if (dimensions.size() > 2) {
+        printRecursively(0, 0, true, true);
+    }
+    else {
+        printRecursively(0, 0, false, true);
+    }
     std::cout << "\n";
 }
 
@@ -43,12 +54,22 @@ dtype& Tensor::gradAt(const std::vector<int>& indices) {
     return grads[indicesToLocationIn1dArray(indices)];
 }
 
-int Tensor::lengthFromDimensionsVector(const std::vector<size_t>& dimensionsVector) const {
+int Tensor::lengthFromDimensions(const std::vector<size_t>& dimensions) const {
     size_t length = 1;
-    for (int i=0; i<dimensionsVector.size(); i++){
-        length *= dimensionsVector[i];
+    for (int i=0; i<dimensions.size(); i++){
+        length *= dimensions[i];
     }
     return length;
+}
+
+std::vector<int> Tensor::stridesFromDimensions(const std::vector<size_t>& dimensions) const {
+    std::vector<int> strides(dimensions.size());
+    int currentStride = 1;
+    for (int i = strides.size()-1; i >= 0; i--) {
+        strides[i] = currentStride;
+        currentStride *= dimensions[i];
+    }
+    return strides;
 }
 
 int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
@@ -57,10 +78,9 @@ int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
         exit(1);
     }  
     int locationOfElementInDataArray = 0;
-    int increment = length;
-    for (int i=0; i < indices.size(); i++){
-        increment /= dimensions[i];
-        locationOfElementInDataArray += indices[i] * increment;
+    int dimensionality = dimensions.size();
+    for (int i=0; i < dimensionality; i++){
+        locationOfElementInDataArray += indices[i] * strides[i];
     }
     if (locationOfElementInDataArray > length){
         std::cerr << "error: invalid indices, exiting\n";
@@ -69,31 +89,51 @@ int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
     return locationOfElementInDataArray;
 }
 
-void Tensor::printRecursively(int start, int dimension, int volumeOfPreviousDimension, bool printGrad) const {
-    int increment = volumeOfPreviousDimension / dimensions[dimension];
-    int lastSubDimensionEntry = start + increment*(dimensions[dimension] - 1); 
+void Tensor::printRecursively(int start, int dimension, bool printByBlocks, bool printGrad) const {
+    int increment = strides[dimension];
+    size_t thisDimShape = dimensions[dimension];
     std::cout << "[";
-    for (int i=start; i <= lastSubDimensionEntry; i+=increment){
-        if (increment==1){
+    if ( printByBlocks ) {
+        std::cout << "  ";
+    }
+    for (int i=0; i < thisDimShape; i++) {
+        if (dimension == dimensions.size() - 1){
             if (printGrad) {
-                std::cout << grads[i];
+                std::cout << grads[start+i];
             }
             else {
-                std::cout << data[i];
+                std::cout << data[start+i];
             }
         }
         else {
-            printRecursively(i, dimension+1, increment, printGrad);
+            printRecursively(start + i*increment, dimension+1, false, printGrad);
         }
-        if (i != lastSubDimensionEntry){
+        if (i < thisDimShape-1) {
             std::cout << ", ";
+            if (printByBlocks) {
+                std::cout << "\n\n   ";
+            }
         }
+    }
+    if (printByBlocks) {
+        std::cout << "  ";
     }
     std::cout << "]";
 }
 
+// Tensor Tensor::operator+( const Tensor& other ) const {
+    
+// }
 
-Tensor Tensor::exp() {
+void checkValidityOfDimension( int dimension ) const {
+    if ( dimension >= dimensions.size() or dimension < 0) {
+        std::cerr << "dimension out of range, exiting\n";
+        exit(1);
+    }
+}
+
+
+Tensor Tensor::exp() const {
     Tensor expedTensor(this->dimensions);
     for (int i = 0; i < length; i++) {
         expedTensor.data[i] = std::exp(this->data[i]);
@@ -101,20 +141,18 @@ Tensor Tensor::exp() {
     return expedTensor;
 }
 
-Tensor Tensor::max(int maxAlongDimension) {
+Tensor Tensor::max(int maxAlongDimension) const {
+    if ( dimension < 0 ) {
+        dimension = dimensions.size() + dimension;
+    }
+    checkValidityOfDimension( dimension );
+
     std::vector<size_t> dimensionsOfMaxTensor = dimensions;
     dimensionsOfMaxTensor[maxAlongDimension] = 1;
-    Tensor maxTensor( std::vector<dtype>(lengthFromDimensionsVector(dimensionsOfMaxTensor), INT_MIN), dimensionsOfMaxTensor );
-    // keeping the previous line because i must resist premature optimization
+    Tensor maxTensor( std::vector<dtype>(lengthFromDimensions(dimensionsOfMaxTensor), INT_MIN), dimensionsOfMaxTensor );
 
-    size_t offsetBetweenElementsOfThisDim = 1;
-    for (int i = maxAlongDimension+1; i < dimensions.size(); i++) {
-        offsetBetweenElementsOfThisDim *= dimensions[i];
-    }
+    size_t offsetBetweenElementsOfThisDim = strides[maxAlongDimension];
     size_t totalSizeOfThisDim = dimensions[maxAlongDimension] * offsetBetweenElementsOfThisDim;
-
-    std::cout << "smaller offset: " << offsetBetweenElementsOfThisDim << ", bigger offset: " << totalSizeOfThisDim << "\n";
-
     int locInMax;
     for (int i = 0; i < length; i++) {
         locInMax = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
