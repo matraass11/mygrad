@@ -6,7 +6,7 @@
 static const std::vector<size_t> defaultDimensions = {1, 1};
 
 struct Layer {
-    Tensor* inputTensor = nullptr;
+    Tensor* currentInputTensor = nullptr;
     Tensor outputTensor;
 
     Layer(const std::vector<size_t> outDimensions = defaultDimensions);
@@ -15,7 +15,7 @@ struct Layer {
     virtual void backward() = 0;
     
 protected:
-    void setInputTensorPointer( Tensor* inputTensor ); // relies on the input tensor not changing
+    inline void setInputTensorPointer( Tensor* inputTensor ); // relies on the input tensor not changing
     virtual void checkDimensions( const Tensor& inputTensor ) = 0; 
     inline void adjustOutTensorDimensions( const std::vector<size_t>& newDimensions );
 };

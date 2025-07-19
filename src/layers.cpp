@@ -5,14 +5,13 @@ static const size_t defaultBatchSize = 32;
 
 Layer::Layer(const std::vector<size_t> outDimensions) : outputTensor(outDimensions) {}
 
-inline void Layer::setInputTensorPointer( Tensor* inputTensor) {
-    this->inputTensor = inputTensor;
+void Layer::setInputTensorPointer( Tensor* inputTensor) {
+    this->currentInputTensor = inputTensor;
 }
 
-inline void Layer::adjustOutTensorDimensions( const std::vector<size_t>& newDimensions ) {
+void Layer::adjustOutTensorDimensions( const std::vector<size_t>& newDimensions ) {
     outputTensor = Tensor( newDimensions );
 }
-
 
 
 LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures,
@@ -41,7 +40,7 @@ void LinearLayer::backward() {
 }
 
 void LinearLayer::matmulWithBias_backward() {
-    if (!(inputTensor)) { 
+    if (!(currentInputTensor)) { 
         std::cerr << "backward before forward impossible. exiting\n";
         exit(1);
     }
@@ -50,12 +49,12 @@ void LinearLayer::matmulWithBias_backward() {
         for (int column=0; column < outputTensor.dimensions[1]; column++) {
             double& currentGradPassedDown = outputTensor.gradAt({row, column});
             
-            for (int dotProductIterator=0; dotProductIterator < inputTensor->dimensions[1]; dotProductIterator++) {
-                inputTensor->gradAt({row, dotProductIterator}) +=
+            for (int dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
+                currentInputTensor->gradAt({row, dotProductIterator}) +=
                     weights.at({dotProductIterator, column}) * currentGradPassedDown; // this line under question
 
                 weights.gradAt({dotProductIterator, column}) += 
-                    inputTensor->at({row, dotProductIterator}) * currentGradPassedDown; 
+                    currentInputTensor->at({row, dotProductIterator}) * currentGradPassedDown; 
                 }
 
             biases.gradAt({0, column}) += currentGradPassedDown;
@@ -91,32 +90,32 @@ void LinearLayer::matmulWithBias() {
         for (int column=0; column < outputTensor.dimensions[1]; column++) {
             double& currentElement = outputTensor.at({row, column}) = biases.at({0, column});
 
-            for (int dotProductIterator=0; dotProductIterator < inputTensor->dimensions[1]; dotProductIterator++) {
+            for (int dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
                 currentElement +=
-                    inputTensor->at({row, dotProductIterator}) * weights.at({dotProductIterator, column});
+                    currentInputTensor->at({row, dotProductIterator}) * weights.at({dotProductIterator, column});
             }
         }
     }
 }
 
-void ReLU::forward( Tensor& inpTensor ) {
-    checkDimensions( inpTensor );
-    setInputTensorPointer( &inpTensor );
+void ReLU::forward( Tensor& inputTensor ) {
+    checkDimensions( inputTensor );
+    setInputTensorPointer( &inputTensor );
 
-    for (int i = 0; i < inputTensor->length; i++) {
-        outputTensor.data[i] = (inputTensor->data[i] >= 0 ? inputTensor->data[i] : 0);
+    for (int i = 0; i < currentInputTensor->length; i++) {
+        outputTensor.data[i] = (currentInputTensor->data[i] >= 0 ? currentInputTensor->data[i] : 0);
     }
 }
 
-void ReLU::checkDimensions( const Tensor& inpTensor ) {
-    if (inpTensor.dimensions != outputTensor.dimensions ) {
-        adjustOutTensorDimensions(inpTensor.dimensions);
+void ReLU::checkDimensions( const Tensor& inputTensor ) {
+    if (inputTensor.dimensions != outputTensor.dimensions ) {
+        adjustOutTensorDimensions(inputTensor.dimensions);
     } 
 }
 
 void ReLU::backward() {
-    for (int i = 0; i < inputTensor->length; i++) {
-        inputTensor->grads[i] = (inputTensor->data[i] >= 0 ? outputTensor.grads[i] : 0);
+    for (int i = 0; i < currentInputTensor->length; i++) {
+        currentInputTensor->grads[i] = (currentInputTensor->data[i] >= 0 ? outputTensor.grads[i] : 0);
     }
 
     setInputTensorPointer(nullptr);

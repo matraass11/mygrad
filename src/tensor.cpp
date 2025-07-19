@@ -46,14 +46,6 @@ void Tensor::printGrad() const {
     std::cout << "\n";
 }
 
-dtype& Tensor::at(const std::vector<int>& indices) {
-    return data[indicesToLocationIn1dArray(indices)];
-}
-
-dtype& Tensor::gradAt(const std::vector<int>& indices) {
-    return grads[indicesToLocationIn1dArray(indices)];
-}
-
 int Tensor::lengthFromDimensions(const std::vector<size_t>& dimensions) const {
     size_t length = 1;
     for (int i=0; i<dimensions.size(); i++){
@@ -74,7 +66,7 @@ std::vector<int> Tensor::stridesFromDimensions(const std::vector<size_t>& dimens
 
 int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
     if (indices.size() != dimensions.size()){
-        std::cerr << "wrong indices, exiting\n";
+        std::cerr << "invalid size of indices to convert to location in 1d, exiting\n";
         exit(1);
     }  
     int locationOfElementInDataArray = 0;
@@ -83,7 +75,7 @@ int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
         locationOfElementInDataArray += indices[i] * strides[i];
     }
     if (locationOfElementInDataArray > length){
-        std::cerr << "error: invalid indices, exiting\n";
+        std::cerr << "indices to be converted to location in 1d are out of bound, exiting\n";
         exit(1);
     }
     return locationOfElementInDataArray;
@@ -121,11 +113,61 @@ void Tensor::printRecursively(int start, int dimension, bool printByBlocks, bool
     std::cout << "]";
 }
 
-// Tensor Tensor::operator+( const Tensor& other ) const {
-    
-// }
+Tensor Tensor::operator+( const Tensor& other ) const {
+    if (dimensions != other.dimensions) {
+        std::cerr << "dimensions must match for unary operations, exiting\n";
+        exit(1);
+    }
+    Tensor output(dimensions);
+    for (int i = 0; i < length; i++) {
+        output.data[i] = data[i] + other.data[i];
+    }
+    return output;
+}
 
-void checkValidityOfDimension( int dimension ) const {
+Tensor Tensor::operator-( const Tensor& other ) const {
+    if (dimensions != other.dimensions) {
+        std::cerr << "dimensions must match for unary operations, exiting\n";
+        exit(1);
+    }
+    Tensor output(dimensions);
+    for (int i = 0; i < length; i++) {
+        output.data[i] = data[i] - other.data[i];
+    }
+    return output;
+}
+
+Tensor Tensor::substractColumn( const Tensor& column ) const {
+
+    if (dimensions.size() != 2 or column.dimensions.size() != 2 
+        or column.dimensions[0] != dimensions[0] or column.dimensions[1] != 1) {
+            std::cerr << "wrond dims for substractColumn, exiting\n";
+            exit(1);
+    }
+
+    Tensor output(dimensions);
+    for (int i = 0; i < length; i++) {
+        output.data[i] = data[i] - column.data[i/dimensions[1]];
+    }
+    return output;
+}
+
+Tensor Tensor::addColumn( const Tensor& column ) const {
+
+    if (dimensions.size() != 2 or column.dimensions.size() != 2 
+        or column.dimensions[0] != dimensions[0] or column.dimensions[1] != 1) {
+            std::cerr << "wrond dims for substractColumn, exiting\n";
+            exit(1);
+    }
+
+    Tensor output(dimensions);
+    for (int i = 0; i < length; i++) {
+        output.data[i] = data[i] + column.data[i/dimensions[1]];
+    }
+    return output;
+}
+
+void Tensor::checkValidityOfDimension( int dimension ) const {
     if ( dimension >= dimensions.size() or dimension < 0) {
         std::cerr << "dimension out of range, exiting\n";
         exit(1);
@@ -134,18 +176,26 @@ void checkValidityOfDimension( int dimension ) const {
 
 
 Tensor Tensor::exp() const {
-    Tensor expedTensor(this->dimensions);
+    Tensor expedTensor( dimensions );
     for (int i = 0; i < length; i++) {
-        expedTensor.data[i] = std::exp(this->data[i]);
+        expedTensor.data[i] = std::exp(data[i]);
     }
     return expedTensor;
 }
 
-Tensor Tensor::max(int maxAlongDimension) const {
-    if ( dimension < 0 ) {
-        dimension = dimensions.size() + dimension;
+Tensor Tensor::log() const {
+    Tensor loggedTensor( dimensions );
+    for (int i = 0; i < length; i++) {
+        loggedTensor.data[i] = std::log(data[i]);
     }
-    checkValidityOfDimension( dimension );
+    return loggedTensor;
+}
+
+Tensor Tensor::max(int maxAlongDimension) const {
+    if ( maxAlongDimension < 0 ) {
+        maxAlongDimension = dimensions.size() + maxAlongDimension;
+    }
+    checkValidityOfDimension( maxAlongDimension );
 
     std::vector<size_t> dimensionsOfMaxTensor = dimensions;
     dimensionsOfMaxTensor[maxAlongDimension] = 1;
@@ -162,4 +212,25 @@ Tensor Tensor::max(int maxAlongDimension) const {
     }
 
     return maxTensor;
+}   
+
+Tensor Tensor::sum(int sumAlongDimension) const {
+    if ( sumAlongDimension < 0 ) {
+        sumAlongDimension = dimensions.size() + sumAlongDimension;
+    }
+    checkValidityOfDimension( sumAlongDimension );
+
+    std::vector<size_t> dimensionsOfSumTensor = dimensions;
+    dimensionsOfSumTensor[sumAlongDimension] = 1;
+    Tensor sumTensor( dimensionsOfSumTensor );
+
+    size_t offsetBetweenElementsOfThisDim = strides[sumAlongDimension];
+    size_t totalSizeOfThisDim = dimensions[sumAlongDimension] * offsetBetweenElementsOfThisDim;
+    int locInSum;
+    for (int i = 0; i < length; i++) {
+        locInSum = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
+        sumTensor.data[locInSum] += this->data[i];
+    }
+
+    return sumTensor;
 }   
