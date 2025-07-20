@@ -15,7 +15,7 @@ class Model {
     ReLU rl2 = ReLU();
     LinearLayer l3 = LinearLayer( NEURONS_N, 1, std::vector<dtype>(NEURONS_N, 1) );
 
-    std::array<Tensor *const, 6> parameters {
+    std::vector<Tensor*> parameters {
         &l1.weights, &l1.biases,
         &l2.weights, &l2.biases,
         &l3.weights, &l3.biases
@@ -32,12 +32,12 @@ class Model {
 public:
     Model();
 
-    void save(const std::string& filename);
+    void save(const std::string& filename) const;
     void load(const std::string& filename);
     void zeroGrad();
     Tensor& forward(Tensor& x);
     void backward();
 
-    void print();
-    void printGrads();
+    void print() const;
+    void printGrads() const;
 };

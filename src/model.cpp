@@ -4,7 +4,7 @@
 
 Model::Model() {}
 
-void Model::save(const std::string& filename) {
+void Model::save(const std::string& filename) const {
     std::ofstream file(filename, std::ios::binary);
     if (!file) {
         // error
@@ -28,15 +28,21 @@ void Model::load(const std::string& filename) {
     }
 }
 
-void Model::print() {
-    for (const Tensor* const tensor: parameters){
-        tensor->print();
+void Model::print() const {
+    for (const Tensor* const parameterTensor: parameters){
+        parameterTensor->print();
     }
 }
 
-void Model::printGrads() {
-    for (const Tensor* const tensor: parameters){
-        tensor->printGrad();
+void Model::printGrads() const {
+    for (const Tensor* const parameterTensor: parameters){
+        parameterTensor->printGrad();
+    }
+}
+
+void Model::zeroGrad() {
+    for (Tensor *const parameterTensor: parameters) {
+        std::memset(parameterTensor->grads.get(), 0, parameterTensor->length*sizeof(dtype));
     }
 }
 
@@ -51,9 +57,6 @@ Tensor& Model::forward(Tensor& x) {
 };
 
 void Model::backward() {
-    for (int i = 0; i < l3.outputTensor.length; i++) { // only for testing
-        l3.outputTensor.grads[i] = 1;
-    }
     l3.backward();
     rl2.backward();
     l2.backward();
