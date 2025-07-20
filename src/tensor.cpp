@@ -1,5 +1,6 @@
 #include <memory>
 #include <iostream>
+#include <format>
 #include "tensor.hpp"
 
 Tensor::Tensor( const std::vector<size_t>& dimensions ) : 
@@ -91,10 +92,10 @@ void Tensor::printRecursively(int start, int dimension, bool printByBlocks, bool
     for (int i=0; i < thisDimShape; i++) {
         if (dimension == dimensions.size() - 1){
             if (printGrad) {
-                std::cout << grads[start+i];
+                std::cout << std::format("{:.4f}", grads[start+i]);
             }
             else {
-                std::cout << data[start+i];
+                std::cout << std::format("{:.4f}", data[start+i]);
             }
         }
         else {
