@@ -1,4 +1,5 @@
 #include <fstream>
+#include <exception>
 #include "model.hpp"
 #include "helper.hpp"
 
@@ -6,9 +7,7 @@ Model::Model() {}
 
 void Model::save(const std::string& filename) const {
     std::ofstream file(filename, std::ios::binary);
-    if (!file) {
-        // error
-    }
+    if (!file.is_open()) throw std::runtime_error("failed to open file " + filename);
 
     for (const Tensor* const parameterTensor : parameters) {
         file.write(reinterpret_cast<char*>(parameterTensor->data.get()), parameterTensor->length*sizeof(dtype));
@@ -18,9 +17,7 @@ void Model::save(const std::string& filename) const {
 
 void Model::load(const std::string& filename) {
     std::ifstream file(filename, std::ios::binary);
-    if (!file) {
-        // error
-    }
+    if (!file.is_open()) throw std::runtime_error("failed to open file " + filename);
 
     for (Tensor* const parameterTensor : parameters) {
         file.read(reinterpret_cast<char*>(parameterTensor->data.get()), parameterTensor->length*sizeof(dtype));

@@ -24,7 +24,15 @@ struct Tensor {
         return data[indicesToLocationIn1dArray(indices)];
     }
 
+    inline dtype at(const std::vector<int>& indices) const {
+        return data[indicesToLocationIn1dArray(indices)];
+    }
+
     inline dtype& gradAt(const std::vector<int>& indices) {
+        return grads[indicesToLocationIn1dArray(indices)];
+    }
+
+    inline dtype gradAt(const std::vector<int>& indices) const {
         return grads[indicesToLocationIn1dArray(indices)];
     }
 
