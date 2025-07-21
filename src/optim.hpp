@@ -45,13 +45,16 @@ public:
     void step() {
         stepsMade++;
         for (int i = 0; i < paramsAndGrads.size(); i++) {
-            dtype& data = paramsAndGrads[i].data, grad = paramsAndGrads[i].grad;
-            dtype& gradRunAvg = paramsAndGrads[i].gradRunAvg, gradSqRunAvg = paramsAndGrads[i].gradSqRunAvg;
+            dtype& data = paramsAndGrads[i].data, &grad = paramsAndGrads[i].grad;
+            dtype& gradRunAvg = paramsAndGrads[i].gradRunAvg, &gradSqRunAvg = paramsAndGrads[i].gradSqRunAvg;
             grad += weightDecay*data;
-            gradRunAvg = ( beta1*gradRunAvg + (1 - beta1)*grad ) / (1 - std::pow(beta1, stepsMade));
-            gradSqRunAvg = ( beta2*gradSqRunAvg + (1 - beta2)*grad*grad ) / (1 - std::pow(beta2, stepsMade));
-            
-            data -= learningRate*gradRunAvg / (std::sqrt(gradSqRunAvg) + epsilon);
+            gradRunAvg = ( beta1*gradRunAvg + (1 - beta1)*grad );
+            gradSqRunAvg = ( beta2*gradSqRunAvg + (1 - beta2)*grad*grad );
+
+            dtype gradRunAvgCorrected = gradRunAvg / (1 - std::pow(beta1, stepsMade));
+            dtype gradSqRunAvgCorrected = gradSqRunAvg / (1 - std::pow(beta2, stepsMade));
+
+            data -= learningRate*gradRunAvgCorrected / (std::sqrt(gradSqRunAvgCorrected) + epsilon);
         }
     }
     
