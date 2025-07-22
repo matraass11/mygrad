@@ -43,6 +43,10 @@ struct Tensor {
         strides = stridesFromDimensions(newDimensions);
     }
 
+    inline void zeroGrad() {
+        std::memset(grads.get(), 0, length*sizeof(dtype));
+    }
+
     std::vector<int> stridesFromDimensions(const std::vector<size_t>& dimensions) const;
     int lengthFromDimensions(const std::vector<size_t>& dimensions) const;
     int indicesToLocationIn1dArray(const std::vector<int>& indices) const;

@@ -58,7 +58,7 @@ Tensor load_mnist_images(const std::string& path) {
     return images;
 }
 
-Tensor load_mnist_labels(const std::string& path) {
+Tensor loadMnistLabels(const std::string& path) {
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open()) throw std::runtime_error("failed to open file: " + path);
 
@@ -82,7 +82,7 @@ Tensor load_mnist_labels(const std::string& path) {
     return labels;
 }
 
-void visualize_image_ascii(const Tensor& images, const Tensor& labels, int index) {
+void visualizeImage(const Tensor& images, const Tensor& labels, int index) {
     const int rows = images.dimensions[1];
     const int cols = images.dimensions[2];
 
@@ -125,13 +125,7 @@ Tensor retrieveBatchFromLabels(const Tensor& labelsTensor, const std::vector<siz
 }
 
 Tensor standartize(const Tensor& tensor) {
-    dtype mean = 0, squaredMean = 0;
-    for (int i = 0; i < tensor.length; i++) {
-        mean += tensor.data[i];
-        squaredMean += tensor.data[i]*tensor.data[i];
-    }
-    mean /= tensor.length, squaredMean/=tensor.length;
-    dtype std = sqrt(squaredMean - mean*mean);
+    dtype mean = tensor.mean(), std = tensor.std();
 
     Tensor standartizedTensor( tensor.dimensions );
     for (int i = 0; i < tensor.length; i++ ) {

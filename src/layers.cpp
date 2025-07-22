@@ -47,11 +47,11 @@ void LinearLayer::matmulWithBias_backward() {
 
     for (int row=0; row < outputTensor.dimensions[0]; row++) {
         for (int column=0; column < outputTensor.dimensions[1]; column++) {
-            double& currentGradPassedDown = outputTensor.gradAt({row, column});
+            dtype currentGradPassedDown = outputTensor.gradAt({row, column});
             
             for (int dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
                 currentInputTensor->gradAt({row, dotProductIterator}) +=
-                    weights.at({dotProductIterator, column}) * currentGradPassedDown; // this line under question
+                    weights.at({dotProductIterator, column}) * currentGradPassedDown;
 
                 weights.gradAt({dotProductIterator, column}) += 
                     currentInputTensor->at({row, dotProductIterator}) * currentGradPassedDown; 

@@ -12,7 +12,6 @@
 
 int main() {
 
-
     Tensor images = load_mnist_images("/Users/fedorkurmanov/Desktop/prog/neuralNetCpp/datasets/mnist/train-images-ubyte");
     Tensor imglabels = load_mnist_labels("/Users/fedorkurmanov/Desktop/prog/neuralNetCpp/datasets/mnist/train-labels-ubyte");
     Tensor standartizedImages = standartize(images);
@@ -21,11 +20,10 @@ int main() {
     const size_t batchSize = 32;
 
     Model model;
-    CrossEntropyLoss loss(10);
-    Adam optim(model.parameters);
-    int n_steps = 2;
 
-    std::cout << (imglabels.length / batchSize) << "\n";
+    CrossEntropyLoss loss(10);
+    Adam optim(model.parameters, 0.001);
+    int n_steps = 2;
 
     for (int step = 0; step < n_steps; step++) {
         std::vector<size_t> indices = shuffledIndices(imglabels.length);
@@ -41,19 +39,14 @@ int main() {
 
             dtype l = loss(output, batchLabels);
 
-            output.print();
-
-            std::cout << "loss at batch " << batch << ": " << l << "\n";
+            // std::cout << "batch - " << batch << ", loss - " << l << "\n";
             avgLoss += l;
-
+            
             loss.backward();
             model.backward();
             optim.step();
             model.zeroGrad();
 
-            if (batch > 2) {
-                break;
-            }
         }
         avgLoss /= (imglabels.length / batchSize);
         std::cout << "average loss at " << step << ": " << avgLoss << "\n";

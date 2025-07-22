@@ -19,9 +19,17 @@ class Model {
 public:
 
     std::vector<Tensor*> parameters {
-        &l1.weights, &l1.biases,
+        &l1.weights, &l1.biases, 
         &l2.weights, &l2.biases,
-        &l3.weights, &l3.biases
+        &l3.weights, &l3.biases,
+    };
+
+    std::vector<Tensor*> intermediateTensors {
+        &l1.outputTensor,
+        &rl1.outputTensor,
+        &l2.outputTensor,
+        &rl2.outputTensor,
+        &l3.outputTensor
     };
 
     Model();

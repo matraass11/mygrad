@@ -39,7 +39,10 @@ void Model::printGrads() const {
 
 void Model::zeroGrad() {
     for (Tensor *const parameterTensor: parameters) {
-        std::memset(parameterTensor->grads.get(), 0, parameterTensor->length*sizeof(dtype));
+        parameterTensor->zeroGrad();
+    }
+    for (Tensor *const parameterTensor: intermediateTensors) {
+        parameterTensor->zeroGrad();
     }
 }
 
