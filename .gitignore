@@ -8,4 +8,4 @@ datasets
 
 main
 test.cpp
-build
+build*

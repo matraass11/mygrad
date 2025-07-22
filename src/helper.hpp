@@ -20,3 +20,6 @@ Tensor load_mnist_labels(const std::string& path);
 void visualize_image_ascii(const Tensor& images, const Tensor& labels, int index);
 Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>& indices);
 Tensor retrieveBatchFromLabels(const Tensor& labels, const std::vector<size_t>& indices);
+Tensor standartize(const Tensor& tensor);
+std::vector<size_t> shuffledIndices(size_t size);
+std::vector<size_t> slicedIndices(const std::vector<size_t>& indices, int start, int length);

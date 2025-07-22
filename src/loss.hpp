@@ -14,7 +14,7 @@ public:
 
     CrossEntropyLoss( const size_t classes ) : currentSoftmaxOutput({ defaultBatchSize, classes} ) {};
 
-    dtype forward( Tensor& logits, const Tensor& labels );
+    dtype operator()( Tensor& logits, const Tensor& labels );
     void backward();
     
 private:

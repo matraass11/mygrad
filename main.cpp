@@ -11,16 +11,53 @@
 #define MODELS_DIR "../models/"
 
 int main() {
-    
-    Tensor logits( {1, 2, 3, 4, 5, 6, 7, 8, 9}, {3, 3} );
-    Tensor labels( {0, 2, 1}, {3, 1} );
 
-    Tensor images = load_mnist_images("../datasets/mnist/train-images-ubyte");
-    Tensor imglabels = load_mnist_labels("../datasets/mnist/train-labels-ubyte");
-    visualize_image_ascii(images, imglabels, 0);
-    
-    // CrossEntropyLoss loss(3);
-    // Adam optim({&logits}, 0.01);
+
+    Tensor images = load_mnist_images("/Users/fedorkurmanov/Desktop/prog/neuralNetCpp/datasets/mnist/train-images-ubyte");
+    Tensor imglabels = load_mnist_labels("/Users/fedorkurmanov/Desktop/prog/neuralNetCpp/datasets/mnist/train-labels-ubyte");
+    Tensor standartizedImages = standartize(images);
+    visualize_image_ascii(images, imglabels, 10);
+
+    const size_t batchSize = 32;
+
+    Model model;
+    CrossEntropyLoss loss(10);
+    Adam optim(model.parameters);
+    int n_steps = 2;
+
+    std::cout << (imglabels.length / batchSize) << "\n";
+
+    for (int step = 0; step < n_steps; step++) {
+        std::vector<size_t> indices = shuffledIndices(imglabels.length);
+        dtype avgLoss = 0;
+        for (int batch = 0; batch < imglabels.length / batchSize; batch++) {
+            std::vector<size_t> batchIndices = slicedIndices(indices, batch*32, 32);
+            Tensor batchInputs = retrieveBatchFromData(standartizedImages, batchIndices);
+            Tensor batchLabels = retrieveBatchFromLabels(imglabels, batchIndices);
+
+            batchInputs.reshape({batchIndices.size(), 784});
+
+            Tensor& output = model.forward(batchInputs);
+
+            dtype l = loss(output, batchLabels);
+
+            output.print();
+
+            std::cout << "loss at batch " << batch << ": " << l << "\n";
+            avgLoss += l;
+
+            loss.backward();
+            model.backward();
+            optim.step();
+            model.zeroGrad();
+
+            if (batch > 2) {
+                break;
+            }
+        }
+        avgLoss /= (imglabels.length / batchSize);
+        std::cout << "average loss at " << step << ": " << avgLoss << "\n";
+    }
 
 
     // for (int i = 0; i < 1001; i++) {

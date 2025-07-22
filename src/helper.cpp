@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <random>
+#include <algorithm>
 #include <exception>
 
 #include "helper.hpp"
@@ -101,6 +102,7 @@ void visualize_image_ascii(const Tensor& images, const Tensor& labels, int index
 }
 
 Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>& indices) {
+
     std::vector<size_t> batchDimensions = dataTensor.dimensions;
     batchDimensions[0] = indices.size();
     Tensor batchTensor(batchDimensions);
@@ -114,10 +116,41 @@ Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>
 }
 
 Tensor retrieveBatchFromLabels(const Tensor& labelsTensor, const std::vector<size_t>& indices) {
-
+    
     Tensor batchTensor( {indices.size() } );
     for (int i=0; i < indices.size(); i++) {
         batchTensor.data[i] = labelsTensor.data[indices[i]];
     }
     return batchTensor;
+}
+
+Tensor standartize(const Tensor& tensor) {
+    dtype mean = 0, squaredMean = 0;
+    for (int i = 0; i < tensor.length; i++) {
+        mean += tensor.data[i];
+        squaredMean += tensor.data[i]*tensor.data[i];
+    }
+    mean /= tensor.length, squaredMean/=tensor.length;
+    dtype std = sqrt(squaredMean - mean*mean);
+
+    Tensor standartizedTensor( tensor.dimensions );
+    for (int i = 0; i < tensor.length; i++ ) {
+        standartizedTensor.data[i] = (tensor.data[i] - mean) / std;
+    }
+    return standartizedTensor;
+}
+
+
+std::vector<size_t> shuffledIndices(size_t size) {
+    std::vector<size_t> indices(size);
+    std::iota(indices.begin(), indices.end(), 0);
+
+    std::shuffle(indices.begin(), indices.end(), generator);
+
+    return indices;
+}
+
+std::vector<size_t> slicedIndices(const std::vector<size_t>& indices, int start, int length) {
+    int end = std::min(start + length, static_cast<int>(indices.size()));
+    return std::vector<size_t>(indices.begin() + start, indices.begin() + end);
 }

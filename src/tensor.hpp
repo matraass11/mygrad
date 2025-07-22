@@ -36,8 +36,15 @@ struct Tensor {
         return grads[indicesToLocationIn1dArray(indices)];
     }
 
-    inline std::vector<int> stridesFromDimensions(const std::vector<size_t>& dimensions) const;
-    inline int lengthFromDimensions(const std::vector<size_t>& dimensions) const;
+    inline void reshape(const std::vector<size_t>& newDimensions) {
+        if (lengthFromDimensions(newDimensions) != length) 
+            throw std::runtime_error("tensor reshaped into dimensions with length different from the current one");
+        dimensions = newDimensions;
+        strides = stridesFromDimensions(newDimensions);
+    }
+
+    std::vector<int> stridesFromDimensions(const std::vector<size_t>& dimensions) const;
+    int lengthFromDimensions(const std::vector<size_t>& dimensions) const;
     int indicesToLocationIn1dArray(const std::vector<int>& indices) const;
 
     Tensor operator+( const Tensor& other ) const;

@@ -1,21 +1,21 @@
 #include <iostream>
 
 #include "loss.hpp"
+#include "helper.hpp"
 
 void CrossEntropyLoss::setInputPointers( Tensor* logits, const Tensor* labels ) {
     this->logits = logits, this->labels = labels;
 }
 
 void CrossEntropyLoss::checkDimensions( Tensor& logits, const Tensor& labels ) {
-    if (logits.dimensions[1] != labels.dimensions[0]) {
-        std::cerr << "dimensions for cross entropy loss must be equal, exiting\n";
-        std::cerr << logits.dimensions[1] << " != " << labels.dimensions[0] << "\n";
-        exit(1);
+    if (logits.dimensions[0] != labels.dimensions[0]) {
+        std::cerr << logits.dimensions[0] << " != " << labels.dimensions[0] << "\n";
+        throw std::runtime_error("logits' first dimension must be the same as labels' first dimension for cross entropy loss");
     }
 }
 
 
-dtype CrossEntropyLoss::forward( Tensor& logits, const Tensor& labels ) { 
+dtype CrossEntropyLoss::operator()( Tensor& logits, const Tensor& labels ) { 
     checkDimensions( logits, labels );
     setInputPointers( &logits, &labels );
 

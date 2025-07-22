@@ -66,15 +66,15 @@ void LinearLayer::checkDimensions(const Tensor& inputTensor) {
     if (
         inputTensor.dimensions.size() != 2
     ) {
-        std::cerr << "dimensionality must be 2, exiting\n";
-        exit(1);
+        std::cout << inputTensor.dimensions;
+        throw std::runtime_error("dimensionality for linear layer input tensor must be 2. dimensions received are printed above");
     }
 
     if (
         inputTensor.dimensions[1] != weights.dimensions[0]
     ) {
-        std::cerr << "wrong dimensions, exiting\n";
-        exit(1);
+        std::cout << inputTensor.dimensions[1] << " != " << weights.dimensions[0] << "\n";
+        throw std::runtime_error("input tensor columns don't match weight tensor rows in linear layer. mismatch printed above");
     }
 
     if (
