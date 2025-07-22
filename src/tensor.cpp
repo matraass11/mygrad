@@ -235,3 +235,21 @@ Tensor Tensor::sum(int sumAlongDimension) const {
 
     return sumTensor;
 }   
+
+dtype Tensor::mean() const {
+    dtype sum = 0;
+    for (int i = 0; i < length; i++) {
+        sum += data[i];
+    }
+    return sum / length;
+}
+
+dtype Tensor::std() const {
+    dtype sumOfSquareDifferences = 0;
+    dtype mean = this->mean();
+    for (int i = 0; i < length; i++) {
+        sumOfSquareDifferences += (data[i] - mean)*(data[i] - mean);
+    }
+
+    return sqrt(sumOfSquareDifferences/(length-1));
+}

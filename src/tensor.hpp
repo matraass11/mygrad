@@ -55,6 +55,8 @@ struct Tensor {
     Tensor log() const;
     Tensor max(int maxAlongDimension) const;
     Tensor sum(int sumAlongDimension) const;
+    dtype mean() const;
+    dtype std() const;
 
 protected:    
     void printRecursively(int start, int dimension, bool printByBlocks, bool printGrad) const;
