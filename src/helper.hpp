@@ -15,9 +15,9 @@ inline std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
     return out;
 }
 
-Tensor load_mnist_images(const std::string& path);
-Tensor load_mnist_labels(const std::string& path);
-void visualize_image_ascii(const Tensor& images, const Tensor& labels, int index);
+Tensor loadMnistImages(const std::string& path);
+Tensor loadMnistLabels(const std::string& path);
+void visualizeImage(const Tensor& images, const Tensor& labels, int index);
 Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>& indices);
 Tensor retrieveBatchFromLabels(const Tensor& labels, const std::vector<size_t>& indices);
 Tensor standartize(const Tensor& tensor);

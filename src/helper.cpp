@@ -26,7 +26,7 @@ std::vector<dtype> KaimingWeightsVector(size_t inFeatures, size_t outFeatures) {
 }
 
 
-Tensor load_mnist_images(const std::string& path) {
+Tensor loadMnistImages(const std::string& path) {
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open()) throw std::runtime_error("failed to open file: " + path);
 
