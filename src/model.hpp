@@ -5,34 +5,48 @@
 #include "layers.hpp"
 #include "helper.hpp"
 
-#define INPUT_SIZE 784
-#define OUTPUT_SIZE 10
-#define NEURONS_N 100
 
 class Model {
-    LinearLayer l1 = LinearLayer( INPUT_SIZE, NEURONS_N, KaimingWeightsVector(INPUT_SIZE, NEURONS_N) );
-    ReLU rl1 = ReLU();
-    LinearLayer l2 = LinearLayer( NEURONS_N, NEURONS_N, KaimingWeightsVector(NEURONS_N, NEURONS_N) );
-    ReLU rl2 = ReLU();
-    LinearLayer l3 = LinearLayer( NEURONS_N, OUTPUT_SIZE, KaimingWeightsVector(NEURONS_N, OUTPUT_SIZE) );
+
+    class LayersContainer {
+    public:
+
+        template <typename... layerTypes>
+        LayersContainer(layerTypes&&... layers) {
+            this->layers.reserve(sizeof...(layerTypes));
+
+            (add(std::move(layers)), ...);
+        }
+
+        inline Layer& operator[](size_t i) { return *layers[i]; }
+
+        inline size_t size() { return layers.size(); }
+
+    private:
+        std::vector<std::unique_ptr<Layer>> layers;
+
+        template <typename layerType>
+        void add(layerType&& layer) {
+            layers.push_back(std::make_unique<layerType>(std::move(layer)));
+        }
+    };
+
+
+    LayersContainer layers;
+
+    const std::vector<Tensor*> parametersOfLayers(LayersContainer& layers);
+    const std::vector<Tensor*> nonParametersOfLayers(LayersContainer& layers);
 
 public:
 
-    std::vector<Tensor*> parameters {
-        &l1.weights, &l1.biases, 
-        &l2.weights, &l2.biases,
-        &l3.weights, &l3.biases,
-    };
+    const std::vector<Tensor*> parameters;
+    const std::vector<Tensor*> nonParameters;
 
-    std::vector<Tensor*> intermediateTensors {
-        &l1.outputTensor,
-        &rl1.outputTensor,
-        &l2.outputTensor,
-        &rl2.outputTensor,
-        &l3.outputTensor
-    };
-
-    Model();
+    template<typename... layerTypes>
+    Model(layerTypes&&... layers) : 
+        layers(layers...),
+        parameters(parametersOfLayers(this->layers)),
+        nonParameters(nonParametersOfLayers(this->layers)) {}
 
     void save(const std::string& filename) const;
     void load(const std::string& filename);

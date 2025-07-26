@@ -9,8 +9,6 @@
 #include "src/optim.hpp"
 #include "src/helper.hpp"
 
-#define MODELS_DIR "../models/"
-
 int main() {
 
     std::filesystem::path path = std::filesystem::current_path();
@@ -20,13 +18,21 @@ int main() {
     Tensor standartizedImages = standartize(images);
     visualizeImage(images, labels, 10);
 
-    const size_t batchSize = 32;
+    const size_t inputSize = images.strides[0], outputSize = 10;
+    const size_t n_neurons = 100;
 
-    Model model;
+    Model model (
+        LinearLayer( inputSize, n_neurons ),
+        ReLU(),
+        LinearLayer( n_neurons, n_neurons ),
+        ReLU(),
+        LinearLayer( n_neurons, outputSize )
+    );
 
     CrossEntropyLoss loss(10);
     Adam optim(model.parameters, 0.001);
     int n_steps = 2;
+    const size_t batchSize = 32;
 
     for (int step = 0; step < n_steps; step++) {
         std::vector<size_t> indices = shuffledIndices(labels.length);
@@ -42,7 +48,7 @@ int main() {
 
             dtype l = loss(output, batchLabels);
 
-            // std::cout << "batch - " << batch << ", loss - " << l << "\n";
+            std::cout << "batch - " << batch << ", loss - " << l << "\n";
             avgLoss += l;
             
             loss.backward();

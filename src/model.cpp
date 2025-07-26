@@ -3,7 +3,24 @@
 #include "model.hpp"
 #include "helper.hpp"
 
-Model::Model() {}
+
+const std::vector<Tensor*> Model::parametersOfLayers(LayersContainer& layers) {
+    std::vector<Tensor*> parameterTensors;
+    for (int i = 0; i < layers.size(); i++) {
+        const std::vector<Tensor*>& parametersOfLayer = layers[i].parameterTensors();
+        parameterTensors.insert(parameterTensors.end(), parametersOfLayer.begin(), parametersOfLayer.end());
+    }
+    return parameterTensors;
+}
+
+const std::vector<Tensor*> Model::nonParametersOfLayers(LayersContainer& layers) {
+    std::vector<Tensor*> nonParameterTensors;
+    for (int i = 0; i < layers.size(); i++) {
+        const std::vector<Tensor*>& nonParametersOfLayer = layers[i].nonParameterTensors();
+        nonParameterTensors.insert(nonParameterTensors.end(), nonParametersOfLayer.begin(), nonParametersOfLayer.end());
+    }
+    return nonParameterTensors;
+}
 
 void Model::save(const std::string& filename) const {
     std::ofstream file(filename, std::ios::binary);
@@ -41,26 +58,24 @@ void Model::zeroGrad() {
     for (Tensor *const parameterTensor: parameters) {
         parameterTensor->zeroGrad();
     }
-    for (Tensor *const parameterTensor: intermediateTensors) {
+    for (Tensor *const parameterTensor: nonParameters) {
         parameterTensor->zeroGrad();
     }
 }
 
 
 Tensor& Model::forward(Tensor& x) {
-    l1.forward(x);
-    rl1.forward(l1.outputTensor);
-    l2.forward(rl1.outputTensor);
-    rl2.forward(l2.outputTensor);
-    l3.forward(rl2.outputTensor);
-    return l3.outputTensor;
+
+    layers[0].forward(x);
+    for (int i = 1; i < layers.size(); i++){
+        layers[i].forward(layers[i-1].outputTensor);
+    }
+    return layers[layers.size() - 1].outputTensor;
 };
 
 void Model::backward() {
-    l3.backward();
-    rl2.backward();
-    l2.backward();
-    rl1.backward();
-    l1.backward();
+    for (int i = layers.size() - 1; i >= 0; i--) {
+        layers[i].backward();
+    }
 }
 

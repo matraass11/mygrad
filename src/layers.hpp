@@ -11,8 +11,13 @@ struct Layer {
 
     Layer(const std::vector<size_t> outDimensions = defaultDimensions);
 
-    virtual void forward( Tensor& inputTensor ) = 0;
-    virtual void backward() = 0;
+    Layer( Layer&& other ) = default;
+    virtual ~Layer() = default;
+
+    virtual void forward( Tensor& inputTensor )        = 0;
+    virtual void backward()                            = 0;
+    virtual std::vector<Tensor*> parameterTensors()    = 0;
+    virtual std::vector<Tensor*> nonParameterTensors() = 0;
     
 protected:
     inline void setInputTensorPointer( Tensor* inputTensor ); // relies on the input tensor not changing
@@ -29,6 +34,8 @@ struct LinearLayer : Layer {
     LinearLayer( size_t inFeatures, size_t outFeatures, const std::vector<dtype>& data);
     void forward( Tensor& inputTensor ) override;
     void backward() override;
+    std::vector<Tensor*> parameterTensors() override { return {&weights, &biases}; }
+    std::vector<Tensor*> nonParameterTensors() override { return {&outputTensor}; }
     
 private:
     void matmulWithBias();
@@ -44,6 +51,8 @@ struct ReLU : Layer {
 
     void forward( Tensor& inputTensor ) override;
     void backward() override;
+    std::vector<Tensor*> parameterTensors() override { return {}; }
+    std::vector<Tensor*> nonParameterTensors() override { return {&outputTensor}; }
 
 private:
     inline void checkDimensions( const Tensor& inputTensor ) override;

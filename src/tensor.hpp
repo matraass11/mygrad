@@ -20,21 +20,16 @@ struct Tensor {
 
     void print() const;
     void printGrad() const;
-    inline dtype& at(const std::vector<int>& indices) {
-        return data[indicesToLocationIn1dArray(indices)];
-    }
 
-    inline dtype at(const std::vector<int>& indices) const {
-        return data[indicesToLocationIn1dArray(indices)];
-    }
 
-    inline dtype& gradAt(const std::vector<int>& indices) {
-        return grads[indicesToLocationIn1dArray(indices)];
-    }
+    inline dtype& at(const std::vector<int>& indices)          { return data[indicesToLocationIn1dArray(indices)]; }
 
-    inline dtype gradAt(const std::vector<int>& indices) const {
-        return grads[indicesToLocationIn1dArray(indices)];
-    }
+    inline dtype at(const std::vector<int>& indices)     const { return data[indicesToLocationIn1dArray(indices)]; }
+
+    inline dtype& gradAt(const std::vector<int>& indices)      { return grads[indicesToLocationIn1dArray(indices)]; }
+
+    inline dtype gradAt(const std::vector<int>& indices) const { return grads[indicesToLocationIn1dArray(indices)]; }
+
 
     inline void reshape(const std::vector<size_t>& newDimensions) {
         if (lengthFromDimensions(newDimensions) != length) 
@@ -43,9 +38,8 @@ struct Tensor {
         strides = stridesFromDimensions(newDimensions);
     }
 
-    inline void zeroGrad() {
-        std::memset(grads.get(), 0, length*sizeof(dtype));
-    }
+    inline void zeroGrad() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
+
 
     std::vector<int> stridesFromDimensions(const std::vector<size_t>& dimensions) const;
     int lengthFromDimensions(const std::vector<size_t>& dimensions) const;
