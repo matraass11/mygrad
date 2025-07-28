@@ -5,6 +5,7 @@
 #include "layers.hpp"
 #include "helper.hpp"
 
+namespace mygrad {
 
 class Model {
 public:
@@ -59,3 +60,5 @@ public:
     const std::vector<Tensor*> parameters;
     const std::vector<Tensor*> nonParameters;
 };
+
+} // namespace mygrad

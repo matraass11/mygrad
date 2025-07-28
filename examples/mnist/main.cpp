@@ -11,6 +11,8 @@
 
 int main() {
 
+    using namespace mygrad;
+
     std::filesystem::path path = std::filesystem::current_path();
 
     Tensor images = loadMnistImages(path /"../dataset/train-images-ubyte");

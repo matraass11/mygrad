@@ -2,6 +2,8 @@
 
 #include "types.hpp"
 
+namespace mygrad {
+
 struct Tensor {
     size_t length;
     
@@ -62,3 +64,5 @@ private:
     inline void checkValidityOfDimension( int dimension ) const;
 
 };
+
+} // namespace mygrad

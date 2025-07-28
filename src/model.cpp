@@ -3,6 +3,7 @@
 #include "mygrad/model.hpp"
 #include "mygrad/helper.hpp"
 
+namespace mygrad {
 
 const std::vector<Tensor*> Model::parametersOfLayers(LayersContainer& layers) {
     std::vector<Tensor*> parameterTensors;
@@ -79,3 +80,4 @@ void Model::backward() {
     }
 }
 
+} // namespace mygrad

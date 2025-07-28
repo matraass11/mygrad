@@ -3,6 +3,8 @@
 #include "mygrad/loss.hpp"
 #include "mygrad/helper.hpp"
 
+namespace mygrad {
+
 void CrossEntropyLoss::setInputPointers( Tensor* logits, const Tensor* labels ) {
     this->logits = logits, this->labels = labels;
 }
@@ -40,3 +42,5 @@ void CrossEntropyLoss::backward() {
         logits->grads[i] += currentSoftmaxOutput.data[i] / static_cast<dtype>(logits->dimensions[0]);
     }
 }
+
+} // namespace mygrad

@@ -1,6 +1,7 @@
 #include <iostream>
 #include "mygrad/optim.hpp"
 
+namespace mygrad {
 
 Adam::Adam(const std::vector<Tensor*>& parameters, dtype learningRate, 
            dtype beta1, dtype beta2, dtype epsilon, dtype weightDecay) :
@@ -31,3 +32,5 @@ void Adam::step() {
         data -= learningRate*gradRunAvgCorrected / (std::sqrt(gradSqRunAvgCorrected) + epsilon);
     }
 }
+
+} // namespace mygrad

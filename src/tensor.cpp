@@ -3,6 +3,8 @@
 #include <format>
 #include "mygrad/tensor.hpp"
 
+namespace mygrad {
+
 Tensor::Tensor( const std::vector<size_t>& dimensions ) : 
     length(lengthFromDimensions(dimensions)),
     dimensions(dimensions),
@@ -253,3 +255,5 @@ dtype Tensor::std() const {
 
     return sqrt(sumOfSquareDifferences/(length-1));
 }
+
+} // namespace mygrad

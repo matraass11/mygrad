@@ -3,6 +3,8 @@
 #include "tensor.hpp"
 #include "types.hpp"
 
+namespace mygrad {
+
 static const size_t defaultBatchSize = 32;
 
 class CrossEntropyLoss {
@@ -22,3 +24,5 @@ private:
     inline void setInputPointers( Tensor* logits, const Tensor* labels ); // relies on the input tensor not changing
     inline void checkDimensions( Tensor& logits, const Tensor& labels );
 };
+
+} // namespace mygrad

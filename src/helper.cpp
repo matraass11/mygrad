@@ -7,6 +7,8 @@
 #include "mygrad/helper.hpp"
 #include "mygrad/types.hpp"
 
+namespace mygrad {
+
 static std::random_device dev;
 static std::mt19937 generator(dev());
 
@@ -148,3 +150,5 @@ std::vector<size_t> slicedIndices(const std::vector<size_t>& indices, int start,
     int end = std::min(start + length, static_cast<int>(indices.size()));
     return std::vector<size_t>(indices.begin() + start, indices.begin() + end);
 }
+
+} // namespace mygrad
