@@ -1,5 +1,5 @@
 #include <iostream>
-#include "optim.hpp"
+#include "mygrad/optim.hpp"
 
 
 Adam::Adam(const std::vector<Tensor*>& parameters, dtype learningRate, 

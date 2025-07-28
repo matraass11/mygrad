@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "loss.hpp"
-#include "helper.hpp"
+#include "mygrad/loss.hpp"
+#include "mygrad/helper.hpp"
 
 void CrossEntropyLoss::setInputPointers( Tensor* logits, const Tensor* labels ) {
     this->logits = logits, this->labels = labels;

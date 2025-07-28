@@ -1,7 +1,7 @@
 #include <memory>
 #include <iostream>
 #include <format>
-#include "tensor.hpp"
+#include "mygrad/tensor.hpp"
 
 Tensor::Tensor( const std::vector<size_t>& dimensions ) : 
     length(lengthFromDimensions(dimensions)),

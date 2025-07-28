@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <exception>
 
-#include "helper.hpp"
-#include "types.hpp"
+#include "mygrad/helper.hpp"
+#include "mygrad/types.hpp"
 
 static std::random_device dev;
 static std::mt19937 generator(dev());
