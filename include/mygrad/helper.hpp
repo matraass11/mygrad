@@ -8,11 +8,6 @@ namespace mygrad {
 std::vector<dtype> normDistVector(size_t length);
 std::vector<dtype> KaimingWeightsVector(size_t inFeatures, size_t outFeatures);
 
-Tensor loadMnistImages(const std::string& path);
-Tensor loadMnistLabels(const std::string& path); 
-void visualizeImage(const Tensor& images, const Tensor& labels, int index); 
-// these three will be moved to the example soon
-
 Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>& indices);
 Tensor retrieveBatchFromLabels(const Tensor& labels, const std::vector<size_t>& indices);
 Tensor standartize(const Tensor& tensor);

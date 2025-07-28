@@ -3,11 +3,7 @@
 #include <fstream>
 #include <filesystem>
 
-#include "mygrad/tensor.hpp"
-#include "mygrad/model.hpp"
-#include "mygrad/loss.hpp"
-#include "mygrad/optim.hpp"
-#include "mygrad/helper.hpp"
+#include "mygrad/mygrad.hpp"
 
 int main() {
 
