@@ -1,6 +1,8 @@
 #include <iostream>
 #include "mygrad/layers.hpp"
 
+namespace mygrad {
+
 static const size_t defaultBatchSize = 32;
 
 Layer::Layer(const std::vector<size_t> outDimensions) : outputTensor(outDimensions) {}
@@ -120,3 +122,5 @@ void ReLU::backward() {
 
     setInputTensorPointer(nullptr);
 }
+
+} // namespace mygrad

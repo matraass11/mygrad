@@ -3,6 +3,8 @@
 #include "tensor.hpp"
 #include "model.hpp"
 
+namespace mygrad {
+
 class Adam {
 public:
 
@@ -43,3 +45,5 @@ private:
     }
 
 };
+
+} // namespace mygrad

@@ -3,6 +3,8 @@
 #include "types.hpp"
 #include "tensor.hpp"
 
+namespace mygrad {
+
 std::vector<dtype> normDistVector(size_t length);
 std::vector<dtype> KaimingWeightsVector(size_t inFeatures, size_t outFeatures);
 
@@ -25,4 +27,6 @@ inline std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
     }
     out << "\n";
     return out;
+}
+
 }

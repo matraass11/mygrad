@@ -3,6 +3,8 @@
 #include "tensor.hpp" 
 #include "helper.hpp"
 
+namespace mygrad {
+
 static const std::vector<size_t> defaultDimensions = {1, 1};
 
 
@@ -60,3 +62,5 @@ private:
     inline void checkDimensions( const Tensor& inputTensor ) override;
 
 };
+
+} // namespace mygrad
