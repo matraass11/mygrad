@@ -1,5 +1,5 @@
 #include <iostream>
-#include "layers.hpp"
+#include "mygrad/layers.hpp"
 
 static const size_t defaultBatchSize = 32;
 
