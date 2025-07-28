@@ -4,7 +4,18 @@
 #include "model.hpp"
 
 class Adam {
- 
+public:
+
+    Adam(const std::vector<Tensor*>& parameters, dtype learningRate = 0.001, 
+         dtype beta1 = 0.9, dtype beta2 = 0.999, 
+         dtype epsilon = std::exp(-8), dtype weightDecay = 0);
+
+
+    void step();
+    
+
+private:
+
     dtype learningRate;
     dtype beta1, beta2;
     dtype epsilon;
@@ -23,17 +34,6 @@ class Adam {
 
     std::vector<dataAndGrads> paramsAndGrads;
 
-public:
-
-    Adam(const std::vector<Tensor*>& parameters, dtype learningRate = 0.001, 
-         dtype beta1 = 0.9, dtype beta2 = 0.999, 
-         dtype epsilon = std::exp(-8), dtype weightDecay = 0);
-
-
-    void step();
-    
-
-private:
     inline size_t sizeOfParamsAndGradsFromParameters(std::vector<Tensor*> parameters) const {
         size_t size = 0;
         for (const Tensor *const param : parameters){

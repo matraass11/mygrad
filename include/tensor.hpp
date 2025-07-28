@@ -56,7 +56,7 @@ struct Tensor {
     dtype mean() const;
     dtype std() const;
 
-protected:    
+private:    
     void printRecursively(int start, int dimension, bool printByBlocks, bool printGrad) const;
     inline void checkIndexDimension( int dimension ) const;
     inline void checkValidityOfDimension( int dimension ) const;

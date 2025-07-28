@@ -5,6 +5,7 @@
 
 static const std::vector<size_t> defaultDimensions = {1, 1};
 
+
 struct Layer {
     Tensor* currentInputTensor = nullptr;
     Tensor outputTensor;
@@ -24,6 +25,7 @@ protected:
     virtual void checkDimensions( const Tensor& inputTensor ) = 0; 
     inline void adjustOutTensorDimensions( const std::vector<size_t>& newDimensions );
 };
+
 
 struct LinearLayer : Layer {
 
@@ -52,7 +54,7 @@ struct ReLU : Layer {
     void forward( Tensor& inputTensor ) override;
     void backward() override;
     std::vector<Tensor*> parameterTensors() override { return {}; }
-    std::vector<Tensor*> nonParameterTensors() override { return {&outputTensor}; }
+    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
 
 private:
     inline void checkDimensions( const Tensor& inputTensor ) override;
