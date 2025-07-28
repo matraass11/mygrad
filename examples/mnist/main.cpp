@@ -13,8 +13,8 @@ int main() {
 
     std::filesystem::path path = std::filesystem::current_path();
 
-    Tensor images = loadMnistImages(path /"../datasets/mnist/train-images-ubyte");
-    Tensor labels = loadMnistLabels(path /"../datasets/mnist/train-labels-ubyte");
+    Tensor images = loadMnistImages(path /"../dataset/train-images-ubyte");
+    Tensor labels = loadMnistLabels(path /"../dataset/train-labels-ubyte");
     Tensor standartizedImages = standartize(images);
     visualizeImage(images, labels, 10);
 
