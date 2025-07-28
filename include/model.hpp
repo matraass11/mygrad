@@ -7,6 +7,27 @@
 
 
 class Model {
+public:
+
+    const std::vector<Tensor*> parameters;
+    const std::vector<Tensor*> nonParameters;
+
+    template<typename... layerTypes>
+    Model(layerTypes&&... layers) : 
+        layers(layers...),
+        parameters(parametersOfLayers(this->layers)),
+        nonParameters(nonParametersOfLayers(this->layers)) {}
+
+    void save(const std::string& filename) const;
+    void load(const std::string& filename);
+    void zeroGrad();
+    Tensor& forward(Tensor& x);
+    void backward();
+
+    void print() const;
+    void printGrads() const;
+
+private:
 
     class LayersContainer {
     public:
@@ -36,24 +57,4 @@ class Model {
 
     const std::vector<Tensor*> parametersOfLayers(LayersContainer& layers);
     const std::vector<Tensor*> nonParametersOfLayers(LayersContainer& layers);
-
-public:
-
-    const std::vector<Tensor*> parameters;
-    const std::vector<Tensor*> nonParameters;
-
-    template<typename... layerTypes>
-    Model(layerTypes&&... layers) : 
-        layers(layers...),
-        parameters(parametersOfLayers(this->layers)),
-        nonParameters(nonParametersOfLayers(this->layers)) {}
-
-    void save(const std::string& filename) const;
-    void load(const std::string& filename);
-    void zeroGrad();
-    Tensor& forward(Tensor& x);
-    void backward();
-
-    void print() const;
-    void printGrads() const;
 };

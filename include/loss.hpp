@@ -6,9 +6,6 @@
 static const size_t defaultBatchSize = 32;
 
 class CrossEntropyLoss {
-    const Tensor* labels = nullptr;
-    Tensor* logits = nullptr;
-    Tensor currentSoftmaxOutput;
 
 public:
 
@@ -18,6 +15,11 @@ public:
     void backward();
     
 private:
+
+    const Tensor* labels = nullptr;
+    Tensor* logits = nullptr;
+    Tensor currentSoftmaxOutput;
+
     inline void setInputPointers( Tensor* logits, const Tensor* labels ); // relies on the input tensor not changing
     inline void checkDimensions( Tensor& logits, const Tensor& labels );
 };
