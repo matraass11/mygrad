@@ -1,11 +1,29 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
+project(mygrad LANGUAGES CXX)
 
-set (CMAKE_CXX_STANDARD 20)
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project("net")
+# Add include directory
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-file(GLOB MAIN_SOURCES "*.cpp" "src/*.cpp")
+# Create the static library
+add_library(mygrad STATIC
+    src/helper.cpp
+    src/layers.cpp
+    src/loss.cpp
+    src/model.cpp
+    src/optim.cpp
+    src/tensor.cpp
+)
 
-list(REMOVE_ITEM MAIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/test.cpp")
+# Set public include path for consumers
+target_include_directories(mygrad PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
 
-add_executable(net ${MAIN_SOURCES})
+# Optional: If you want to define an install rule later
+# install(TARGETS mygrad EXPORT mygradTargets DESTINATION lib)
+# install(DIRECTORY include/mygrad DESTINATION include)

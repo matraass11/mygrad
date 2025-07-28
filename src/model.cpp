@@ -1,7 +1,7 @@
 #include <fstream>
 #include <exception>
 #include "mygrad/model.hpp"
-#include "mygad/helper.hpp"
+#include "mygrad/helper.hpp"
 
 
 const std::vector<Tensor*> Model::parametersOfLayers(LayersContainer& layers) {
