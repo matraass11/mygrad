@@ -1,4 +1,8 @@
+#include <iostream>
+#include <fstream>
 #include "processData.hpp"
+
+using namespace mygrad;
 
 Tensor loadMnistImages(const std::string& path) {
     std::ifstream file(path, std::ios::binary);
