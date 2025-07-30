@@ -5,14 +5,11 @@
 
 namespace mygrad {
 
-static const std::vector<size_t> defaultDimensions = {1, 1};
-
-
 struct Layer {
     Tensor* currentInputTensor = nullptr;
     Tensor outputTensor;
 
-    Layer(const std::vector<size_t> outDimensions = defaultDimensions);
+    Layer();
 
     Layer( Layer&& other ) = default;
     virtual ~Layer() = default;

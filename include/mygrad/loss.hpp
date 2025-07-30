@@ -5,12 +5,10 @@
 
 namespace mygrad {
 
-static const size_t defaultBatchSize = 32;
-
 class CrossEntropyLoss {
 public:
 
-    CrossEntropyLoss( const size_t classes ) : currentSoftmaxOutput({ defaultBatchSize, classes} ) {};
+    CrossEntropyLoss();
 
     dtype operator()( Tensor& logits, const Tensor& labels );
     void backward();
