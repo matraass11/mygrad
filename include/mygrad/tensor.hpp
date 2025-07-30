@@ -46,6 +46,7 @@ struct Tensor {
     std::vector<int> stridesFromDimensions(const std::vector<size_t>& dimensions) const;
     int lengthFromDimensions(const std::vector<size_t>& dimensions) const;
     int indicesToLocationIn1dArray(const std::vector<int>& indices) const;
+    std::vector<int> locationIn1dArrayToIndices(int location) const;
 
     Tensor operator+( const Tensor& other ) const;
     Tensor operator-( const Tensor& other ) const;
@@ -55,6 +56,7 @@ struct Tensor {
     Tensor log() const;
     Tensor max(int maxAlongDimension) const;
     Tensor sum(int sumAlongDimension) const;
+    Tensor argmax(int argmaxAlongDimension) const;
     dtype mean() const;
     dtype std() const;
 
