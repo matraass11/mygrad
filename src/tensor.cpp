@@ -3,6 +3,8 @@
 #include <format>
 #include "mygrad/tensor.hpp"
 
+#include "mygrad/helper.hpp"
+
 namespace mygrad {
 
 Tensor::Tensor( const std::vector<size_t>& dimensions ) : 
@@ -30,13 +32,13 @@ Tensor::Tensor( const std::vector<dtype>& dataVector,
 
 
 void Tensor::print() const {
-    if (dimensions.size() > 2) {
+    if (dimensions.size() > 1) {
         printRecursively(0, 0, true, false);
     }
     else {
         printRecursively(0, 0, false, false);
     }
-    std::cout << "\n";
+    std::cout << "\n\n";
 }
 
 void Tensor::printGrad() const {
@@ -46,7 +48,7 @@ void Tensor::printGrad() const {
     else {
         printRecursively(0, 0, false, true);
     }
-    std::cout << "\n";
+    std::cout << "\n\n";
 }
 
 int Tensor::lengthFromDimensions(const std::vector<size_t>& dimensions) const {
@@ -84,6 +86,20 @@ int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
     return locationOfElementInDataArray;
 }
 
+std::vector<int> Tensor::locationIn1dArrayToIndices(int location) const {
+    if (location < 0 or location >= length) {
+        std::cerr << location << " - location\n";
+        throw std::runtime_error("location to be converted to indices is out of range");
+    }
+
+    std::vector<int> indices(dimensions.size());
+    for (int i = 0; i < indices.size() ; i++) {
+        indices[i] = location / strides[i];
+        location -= indices[i] * strides[i];
+    }
+    return indices;
+}
+
 void Tensor::printRecursively(int start, int dimension, bool printByBlocks, bool printGrad) const {
     int increment = strides[dimension];
     size_t thisDimShape = dimensions[dimension];
@@ -94,19 +110,22 @@ void Tensor::printRecursively(int start, int dimension, bool printByBlocks, bool
     for (int i=0; i < thisDimShape; i++) {
         if (dimension == dimensions.size() - 1){
             if (printGrad) {
-                std::cout << std::format("{:.4f}", grads[start+i]);
+                std::cout << std::format("{:#.4F}", grads[start+i]);
             }
             else {
-                std::cout << std::format("{:.4f}", data[start+i]);
+                std::cout << std::format("{:#.4F}", data[start+i]);
             }
         }
         else {
-            printRecursively(start + i*increment, dimension+1, false, printGrad);
+            if (dimensions.size() - dimension == 2) {
+                printByBlocks = false;
+            }
+            printRecursively(start + i*increment, dimension+1, printByBlocks, printGrad);
         }
         if (i < thisDimShape-1) {
             std::cout << ", ";
             if (printByBlocks) {
-                std::cout << "\n\n   ";
+                std::cout << "\n   ";
             }
         }
     }
@@ -194,18 +213,18 @@ Tensor Tensor::log() const {
     return loggedTensor;
 }
 
-Tensor Tensor::max(int maxAlongDimension) const {
-    if ( maxAlongDimension < 0 ) {
-        maxAlongDimension = dimensions.size() + maxAlongDimension;
+Tensor Tensor::max(int dim) const {
+    if ( dim < 0 ) {
+        dim = dimensions.size() + dim;
     }
-    checkValidityOfDimension( maxAlongDimension );
+    checkValidityOfDimension( dim );
 
-    std::vector<size_t> dimensionsOfMaxTensor = dimensions;
-    dimensionsOfMaxTensor[maxAlongDimension] = 1;
-    Tensor maxTensor( std::vector<dtype>(lengthFromDimensions(dimensionsOfMaxTensor), INT_MIN), dimensionsOfMaxTensor );
+    std::vector<size_t> dimsOfMaxTensor = dimensions;
+    dimsOfMaxTensor[dim] = 1;
+    Tensor maxTensor( std::vector<dtype>(lengthFromDimensions(dimsOfMaxTensor), INT_MIN), dimsOfMaxTensor );
 
-    size_t offsetBetweenElementsOfThisDim = strides[maxAlongDimension];
-    size_t totalSizeOfThisDim = dimensions[maxAlongDimension] * offsetBetweenElementsOfThisDim;
+    size_t offsetBetweenElementsOfThisDim = strides[dim];
+    size_t totalSizeOfThisDim = dimensions[dim] * offsetBetweenElementsOfThisDim;
     int locInMax;
     for (int i = 0; i < length; i++) {
         locInMax = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
@@ -217,18 +236,18 @@ Tensor Tensor::max(int maxAlongDimension) const {
     return maxTensor;
 }   
 
-Tensor Tensor::sum(int sumAlongDimension) const {
-    if ( sumAlongDimension < 0 ) {
-        sumAlongDimension = dimensions.size() + sumAlongDimension;
+Tensor Tensor::sum(int dim) const {
+    if ( dim < 0 ) {
+        dim = dimensions.size() + dim;
     }
-    checkValidityOfDimension( sumAlongDimension );
+    checkValidityOfDimension( dim );
 
-    std::vector<size_t> dimensionsOfSumTensor = dimensions;
-    dimensionsOfSumTensor[sumAlongDimension] = 1;
-    Tensor sumTensor( dimensionsOfSumTensor );
+    std::vector<size_t> dimsOfSumTensor = dimensions;
+    dimsOfSumTensor[dim] = 1;
+    Tensor sumTensor( dimsOfSumTensor );
 
-    size_t offsetBetweenElementsOfThisDim = strides[sumAlongDimension];
-    size_t totalSizeOfThisDim = dimensions[sumAlongDimension] * offsetBetweenElementsOfThisDim;
+    size_t offsetBetweenElementsOfThisDim = strides[dim];
+    size_t totalSizeOfThisDim = dimensions[dim] * offsetBetweenElementsOfThisDim;
     int locInSum;
     for (int i = 0; i < length; i++) {
         locInSum = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
@@ -236,7 +255,32 @@ Tensor Tensor::sum(int sumAlongDimension) const {
     }
 
     return sumTensor;
-}   
+}
+
+Tensor Tensor::argmax(int dim) const {
+    if ( dim < 0 ) {
+        dim = dimensions.size() + dim;
+    }
+    checkValidityOfDimension( dim );
+
+    std::vector<size_t> dimsOfArgmaxTensor = dimensions;
+    dimsOfArgmaxTensor[dim] = 1;
+    Tensor argmaxTensor( std::vector<dtype>(length/dimensions[dim], INT_MIN), dimsOfArgmaxTensor );
+
+    size_t offsetBetweenElementsOfThisDim = strides[dim];
+    size_t totalSizeOfThisDim = dimensions[dim] * offsetBetweenElementsOfThisDim;
+    int locInArgmax;
+    for (int i = 0; i < length; i++) {
+        locInArgmax = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
+        std::vector<int> currentMaxIndices = locationIn1dArrayToIndices(i);
+        currentMaxIndices[dim] = argmaxTensor.data[locInArgmax];
+        if (argmaxTensor.data[locInArgmax] == INT_MIN or this->data[i] > this->at(currentMaxIndices)) {
+            argmaxTensor.data[locInArgmax] = locationIn1dArrayToIndices(i)[dim];
+        }
+    }
+
+    return argmaxTensor;
+}
 
 dtype Tensor::mean() const {
     dtype sum = 0;
