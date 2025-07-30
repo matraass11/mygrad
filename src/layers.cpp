@@ -3,9 +3,11 @@
 
 namespace mygrad {
 
-static const size_t defaultBatchSize = 32;
+static const std::vector<size_t> defaultDimensions = {32, 100}; 
+// we have to initialize the output tensor with some dimensions, so we pick some arbitrary ones.
+// when needed, the dimensions are adjusted
 
-Layer::Layer(const std::vector<size_t> outDimensions) : outputTensor(outDimensions) {}
+Layer::Layer() : outputTensor(defaultDimensions) {}
 
 void Layer::setInputTensorPointer( Tensor* inputTensor) {
     this->currentInputTensor = inputTensor;
@@ -18,8 +20,6 @@ void Layer::adjustOutTensorDimensions( const std::vector<size_t>& newDimensions 
 
 LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures,
                           const std::vector<dtype>& data ) : //this is for testing
-    Layer( {defaultBatchSize, outFeatures} ),
-
     weights( data, { inFeatures, outFeatures } ), 
     biases( std::vector<dtype>(outFeatures, 0), {1, outFeatures} ) {}
     
@@ -80,7 +80,7 @@ void LinearLayer::checkDimensions(const Tensor& inputTensor) {
     }
 
     if (
-        inputTensor.dimensions[0] != outputTensor.dimensions[0]
+        inputTensor.dimensions[0] != outputTensor.dimensions[0] or weights.dimensions[1] != outputTensor.dimensions[1]
     ) {
         adjustOutTensorDimensions( {inputTensor.dimensions[0], weights.dimensions[1]} );
     }

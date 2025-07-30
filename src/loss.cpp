@@ -5,6 +5,12 @@
 
 namespace mygrad {
 
+static const std::vector<size_t> defaultDimensions = {64, 10};
+// we have to initialize the intermediate tensor with some dimensions, so we pick some arbitrary ones.
+// when needed, the dimensions are adjusted
+
+CrossEntropyLoss::CrossEntropyLoss() : currentSoftmaxOutput(defaultDimensions) {}
+
 void CrossEntropyLoss::setInputPointers( Tensor* logits, const Tensor* labels ) {
     this->logits = logits, this->labels = labels;
 }
@@ -14,6 +20,9 @@ void CrossEntropyLoss::checkDimensions( Tensor& logits, const Tensor& labels ) {
         std::cerr << logits.dimensions[0] << " != " << labels.dimensions[0] << "\n";
         throw std::runtime_error("logits' first dimension must be the same as labels' first dimension for cross entropy loss");
     }
+    if (currentSoftmaxOutput.dimensions != logits.dimensions) {
+        currentSoftmaxOutput = Tensor(logits.dimensions);
+    } 
 }
 
 
