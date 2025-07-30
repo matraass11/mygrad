@@ -40,12 +40,13 @@ dtype test(Model& model, Tensor& data, Tensor& labels, size_t batchSize) {
     std::vector<size_t> indices = shuffledIndices(labels.length);
 
     int correct = 0;
+    int total = 0;
     for (int batch = 0; batch < labels.length / batchSize; batch++) {
         std::vector<size_t> batchIndices = slicedIndices(indices, batch*batchSize, batchSize);
         Tensor batchInputs = retrieveBatchFromData(data, batchIndices);
         Tensor batchLabels = retrieveBatchFromLabels(labels, batchIndices);
 
-        batchInputs.reshape({batchIndices.size(), 784});
+        batchInputs.reshape({batchSize, 784});
 
         const Tensor& predictions = model.forward(batchInputs).argmax(1);
 
@@ -53,63 +54,62 @@ dtype test(Model& model, Tensor& data, Tensor& labels, size_t batchSize) {
             if (predictions.data[i] == batchLabels.data[i]) {
                 correct++;
             }
+            total++;
         }
 
-        std::cout << predictions.dimensions << "correct: " << correct << ", " << "predictions.length: " << predictions.length << "\n"; 
+        // std::cout  << "correct: " << correct << ", " << "total: " << total << "\n"; 
 
     }
-    return correct / (dtype) labels.length;
+    return correct / (dtype) total;
 }
 
 
 int main() {
 
-    Tensor t ( {10000, 2, 3, 4, 5, 2, 99, 999}, {2, 2, 2});
 
-    std::cout << t.locationIn1dArrayToIndices(3);
+
 
     // HANDLE TENSOR CONSTRUCTOR BAD ALLOC WHEN ACCIDENTALLY PASSING DATA AS DIMENSIONS
 
-    t.print();
-    t.argmax(2).print();
-    t.argmax(1).print();
-    t.argmax(0).print();
-
-    // std::filesystem::path path = std::filesystem::current_path();
-
-    // Tensor images = loadMnistImages(path /"../dataset/train-images-ubyte");
-    // Tensor labels = loadMnistLabels(path /"../dataset/train-labels-ubyte");
-    // Tensor standartizedImages = standartize(images);
-    // visualizeImage(images, labels, 10);
-
-    // const size_t inputSize = images.strides[0], outputSize = 10;
-    // const size_t n_neurons = 100;
-
-    // Model model (
-    //     LinearLayer( inputSize, n_neurons ),
-    //     ReLU(),
-    //     LinearLayer( n_neurons, n_neurons ),
-    //     ReLU(),
-    //     LinearLayer( n_neurons, outputSize )
-    // );
-
-    // CrossEntropyLoss loss(10);
-    // Adam optim(model.parameters, 0.001);
-    // int n_steps = 2;
-    // const size_t batchSize = 32;
-
-    // for (int step = 0; step < n_steps; step++) {
-    //     // dtype avgTrainLoss = train(model, standartizedImages, labels, loss, optim, 32);
-    //     std::cout << "test accuracy on step " << step << ": " << test(model, standartizedImages, labels, 1024) << std::endl;
-    // }
+    // Tensor t ({2, 3, 4, 0, 1, 0, -2, -34, -0.005, 980, 7, 0.1}, {4, 3});
+    // t.argmax(1).print();
 
 
 
-    // Tensor testImages = loadMnistImages(path / "../datasets/mnist/test-images-ubyte");
-    // Tensor testLabels = loadMnistLabels(path / "../datasets/mnist/test-labels-ubyte");
-    // Tensor stdTestImages = standartize(images);
-    // visualizeImage(testImages, 88);
 
-    // const size_t testBatchSize = 32;
-    // for ()
+    std::filesystem::path path = std::filesystem::current_path();
+
+    Tensor images = loadMnistImages(path /"../dataset/train-images-ubyte");
+    Tensor labels = loadMnistLabels(path /"../dataset/train-labels-ubyte");
+    Tensor standartizedImages = standartize(images);
+    visualizeImage(standartizedImages, labels, 10);
+
+
+    Tensor testImages = loadMnistImages(path / "../dataset/test-images-ubyte");
+    Tensor testLabels = loadMnistLabels(path / "../dataset/test-labels-ubyte");
+    Tensor standartizedTestImages = standartize(testImages);
+    visualizeImage(testImages, testLabels, 88);
+
+
+    const size_t inputSize = images.strides[0], outputSize = 10;
+    std::cout << inputSize << "\n";
+    const size_t n_neurons = 100;
+
+    Model model (
+        LinearLayer( inputSize, n_neurons ),
+        ReLU(),
+        LinearLayer( n_neurons, n_neurons ),
+        ReLU(),
+        LinearLayer( n_neurons, outputSize )
+    );
+
+    CrossEntropyLoss loss(10);
+    Adam optim(model.parameters, 0.001);
+    int n_steps = 1;
+    model.load("test_model");
+
+    for (int step = 0; step < n_steps; step++) {
+        // std::cout << "average traing loss on step " << step << ": " << train(model, standartizedImages, labels, loss, optim, 128) << std::endl;
+        std::cout << "test accuracy on step " << step << ": \n" << test(model, standartizedTestImages, testLabels, 1024) << std::endl;
+    }
 } 
