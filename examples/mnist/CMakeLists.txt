@@ -14,6 +14,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../ mygrad_build EXCLUDE_FROM_AL
 
 add_executable(mnist 
     main.cpp 
-    processData.cpp
-    modelRunner.cpp )
+    src/processData.cpp
+    src/modelRunner.cpp )
 target_link_libraries(mnist PRIVATE mygrad)
