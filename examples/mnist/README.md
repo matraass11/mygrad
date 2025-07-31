@@ -1,6 +1,6 @@
 # to build:
 
-<ins> requirements: </ins> cmake, c++20
+### <ins>requirements</ins>: cmake 3.14+, c++20+
 
 ## macos / linux:
 
@@ -13,7 +13,7 @@ cmake --build build
 ```bat
 :: Open "x64 Native Tools Command Prompt for VS"
 
-cmake -B build -DCMAKE_BUILD_TYPE=Release -G "NMake Makefiles"
+cmake . -B build -DCMAKE_BUILD_TYPE=Release -G "NMake Makefiles"
 cmake --build build
 ```
 
