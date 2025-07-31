@@ -5,8 +5,8 @@
 
 #include "mygrad/mygrad.hpp"
 
-#include "processData.hpp"
-#include "modelRunner.hpp"
+#include "src/processData.hpp"
+#include "src/modelRunner.hpp"
 
 using namespace mygrad;
 
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
         ReLU(),
         LinearLayer( neurons, numberOfClasses )
     );
-    
+
 
     std::string mode = argv[1];
 
