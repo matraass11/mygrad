@@ -35,6 +35,28 @@ void testModel(Model& model) {
     std::cout << "test accuracy: " << test(model, standartizedTestImages, testLabels, 1024) << std::endl;
 }
 
+void showModel(Model& model) {
+    std::filesystem::path path = std::filesystem::current_path();
+
+    Tensor testImages = loadMnistImages(path / "../dataset/test-images-ubyte");
+    Tensor testLabels = loadMnistLabels(path / "../dataset/test-labels-ubyte");
+    Tensor standartizedTestImages = standartize(testImages);
+
+    std::cout << "choosing random images from test set...\n";
+    std::vector<size_t> randomIndices = shuffledIndices(testLabels.length); 
+    for (int i = 0; i < 5; i++) {
+
+        std::cout << "\n==============================\n";
+        Tensor input = retrieveBatchFromData(standartizedTestImages, {randomIndices[i]});
+        input.reshape({1, 784});
+        visualizeImage(testImages, randomIndices[i]);
+        const Tensor prediction = model(input).argmax(1);
+        // std::cout << "\n==============================\n";
+        std::cout <<   "        prediction: " << prediction.data[0] << "         \n";
+        std::cout <<   "==============================\n";
+
+    }
+}
 
 
 static dtype train(Model& model, Tensor& data, Tensor& labels, CrossEntropyLoss& loss, Adam& optim, size_t batchSize) {
