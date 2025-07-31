@@ -1,5 +1,5 @@
 #include <fstream>
-#include <exception>
+#include <stdexcept>
 #include "mygrad/model.hpp"
 #include "mygrad/helper.hpp"
 

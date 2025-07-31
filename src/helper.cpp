@@ -3,6 +3,7 @@
 #include <random>
 #include <algorithm>
 #include <exception>
+#include <cmath>
 
 #include "mygrad/helper.hpp"
 #include "mygrad/types.hpp"
@@ -24,7 +25,7 @@ std::vector<dtype> normDistVector(size_t length, dtype standardDeviation = 1) {
 
 std::vector<dtype> KaimingWeightsVector(size_t inFeatures, size_t outFeatures) {
     dtype variance = 2 / ( (dtype)inFeatures );
-    return normDistVector(inFeatures*outFeatures, sqrt(variance));
+    return normDistVector(inFeatures*outFeatures, std::sqrt(variance));
 }
 
 

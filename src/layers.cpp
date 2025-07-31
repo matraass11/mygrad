@@ -1,4 +1,6 @@
 #include <iostream>
+#include <stdexcept>
+
 #include "mygrad/layers.hpp"
 
 namespace mygrad {
