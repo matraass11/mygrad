@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include <cstring>
+
 #include "types.hpp"
 
 namespace mygrad {
