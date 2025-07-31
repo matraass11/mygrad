@@ -1,7 +1,7 @@
 #include <iostream>
 #include <filesystem>
 
-#include "trainAndTest.hpp"
+#include "modelRunner.hpp"
 #include "processData.hpp"
 #include "mygrad/mygrad.hpp"
 
@@ -25,18 +25,14 @@ void trainModel(Model& model) {
 }
 
 
-void testModel(Model& model, bool checkTotalAccuracy) {
+void testModel(Model& model) {
     std::filesystem::path path = std::filesystem::current_path();
 
     Tensor testImages = loadMnistImages(path / "../dataset/test-images-ubyte");
     Tensor testLabels = loadMnistLabels(path / "../dataset/test-labels-ubyte");
     Tensor standartizedTestImages = standartize(testImages);
 
-    if (checkTotalAccuracy) {
-        std::cout << "test accuracy: " << test(model, standartizedTestImages, testLabels, 1024) << std::endl;
-    }
-
-    // std::cout << ""
+    std::cout << "test accuracy: " << test(model, standartizedTestImages, testLabels, 1024) << std::endl;
 }
 
 
