@@ -74,10 +74,17 @@ Tensor& Model::forward(Tensor& x) {
     return layers[layers.size() - 1].outputTensor;
 };
 
+
+Tensor& Model::operator()(Tensor& x) {
+    return forward(x);
+}
+
+
 void Model::backward() {
     for (int i = layers.size() - 1; i >= 0; i--) {
         layers[i].backward();
     }
 }
+
 
 } // namespace mygrad
