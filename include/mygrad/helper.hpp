@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include "types.hpp"
 #include "tensor.hpp"
 

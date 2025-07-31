@@ -1,6 +1,8 @@
 #include <memory>
 #include <iostream>
 #include <format>
+#include <cmath>
+#include <algorithm>
 #include "mygrad/tensor.hpp"
 
 #include "mygrad/helper.hpp"
@@ -24,7 +26,6 @@ Tensor::Tensor( const std::vector<dtype>& dataVector,
 
         if (dataVector.size() != length) {
             std::cerr << "tensor initialized with vector of wrong size. exiting\n"; 
-                // might remove later because this requires proper initialization even of an empty vector
                 std::cerr << dataVector.size() << " != " << length << "\n";
                 exit(1);
             }
@@ -297,7 +298,7 @@ dtype Tensor::std() const {
         sumOfSquareDifferences += (data[i] - mean)*(data[i] - mean);
     }
 
-    return sqrt(sumOfSquareDifferences/(length-1));
+    return std::sqrt(sumOfSquareDifferences/(length-1));
 }
 
 } // namespace mygrad

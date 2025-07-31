@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iostream>
+#include <string>
+
 #include "tensor.hpp"
 #include "layers.hpp"
 #include "helper.hpp"

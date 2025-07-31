@@ -1,4 +1,6 @@
 #include <iostream>
+#include <vector>
+#include <stdexcept>
 
 #include "mygrad/loss.hpp"
 #include "mygrad/helper.hpp"
