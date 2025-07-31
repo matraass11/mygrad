@@ -1,3 +1,5 @@
+**simple mnist classifier using mygrad!**
+
 # to build:
 
 ### <ins>requirements</ins>: cmake 3.14+, c++20+
