@@ -60,13 +60,12 @@ Tensor loadMnistLabels(const std::string& path) {
     return labels;
 }
 
-void visualizeImage(const Tensor& images, const Tensor& labels, int index) {
+
+void visualizeImage(const Tensor& images, int index) {
     const int rows = images.dimensions[1];
     const int cols = images.dimensions[2];
 
     const char* grayRamp = " .:-=+*#%@"; // from light to dark
-    
-    std::cout << "Label: " << static_cast<int>(labels.at({index})) << "\n";
 
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
@@ -77,4 +76,10 @@ void visualizeImage(const Tensor& images, const Tensor& labels, int index) {
         }
         std::cout << "\n";
     }
+}
+
+void visualizeImage(const Tensor& images, const Tensor& labels, int index) {
+    
+    std::cout << "Label: " << static_cast<int>(labels.at({index})) << "\n";
+    visualizeImage(images, index);
 }
