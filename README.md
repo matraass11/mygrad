@@ -1,1 +1,2 @@
-nothing fancy, just my grad. tensors and automatic differentiation. work in progress
+# nothing fancy, just my grad - tensors and automatic differentiation. 
+## examples of usage are in /examples
