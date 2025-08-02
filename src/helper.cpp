@@ -8,7 +8,7 @@
 #include "mygrad/helper.hpp"
 #include "mygrad/types.hpp"
 
-namespace mygrad {
+namespace mygrad { 
 
 static std::random_device dev;
 static std::mt19937 generator(dev());
@@ -33,7 +33,7 @@ Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>
 
     std::vector<size_t> batchDimensions = dataTensor.dimensions;
     batchDimensions[0] = indices.size();
-    Tensor batchTensor(batchDimensions);
+    Tensor batchTensor = Tensor::zeros(batchDimensions);
     const size_t subTensorSize = dataTensor.strides[0];
     for (int i=0; i < indices.size(); i++) {
         std::memcpy(batchTensor.data.get() + i*subTensorSize,
@@ -45,7 +45,7 @@ Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>
 
 Tensor retrieveBatchFromLabels(const Tensor& labelsTensor, const std::vector<size_t>& indices) {
     
-    Tensor batchTensor( {indices.size() } );
+    Tensor batchTensor = Tensor::zeros( {indices.size() } );
     for (int i=0; i < indices.size(); i++) {
         batchTensor.data[i] = labelsTensor.data[indices[i]];
     }
@@ -55,7 +55,7 @@ Tensor retrieveBatchFromLabels(const Tensor& labelsTensor, const std::vector<siz
 Tensor standartize(const Tensor& tensor) {
     dtype mean = tensor.mean(), std = tensor.std();
 
-    Tensor standartizedTensor( tensor.dimensions );
+    Tensor standartizedTensor = Tensor::zeros( tensor.dimensions );
     for (int i = 0; i < tensor.length; i++ ) {
         standartizedTensor.data[i] = (tensor.data[i] - mean) / std;
     }

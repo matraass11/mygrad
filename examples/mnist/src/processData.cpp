@@ -21,7 +21,7 @@ Tensor loadMnistImages(const std::string& path) {
     n_rows        = __builtin_bswap32(n_rows);
     n_cols        = __builtin_bswap32(n_cols);
 
-    Tensor images({static_cast<size_t>(n_images), static_cast<size_t>(n_rows), static_cast<size_t>(n_cols)});
+    Tensor images = Tensor::zeros({static_cast<size_t>(n_images), static_cast<size_t>(n_rows), static_cast<size_t>(n_cols)});
 
     for (int i = 0; i < n_images; ++i) {
         for (int r = 0; r < n_rows; ++r) {
@@ -50,7 +50,7 @@ Tensor loadMnistLabels(const std::string& path) {
     if (magic != 2049) throw std::runtime_error("magic number for labels wrong");
 
 
-    Tensor labels({static_cast<size_t> (n_labels) }); // Assuming 1D tensor
+    Tensor labels = Tensor::zeros({static_cast<size_t> (n_labels) }); // Assuming 1D tensor
     for (int i = 0; i < n_labels; ++i) {
         unsigned char label = 0;
         file.read((char*)&label, 1);
