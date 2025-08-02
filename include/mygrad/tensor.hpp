@@ -15,13 +15,14 @@ struct Tensor {
     std::unique_ptr<dtype[]> data;
     std::unique_ptr<dtype[]> grads;
 
-    Tensor( dtype* data, dtype* grads,
-            const std::vector<size_t>& dimensions );
-    
-    Tensor( const std::vector<size_t>& dimensions );
-
     Tensor( const std::vector<dtype>& dataVector,
             const std::vector<size_t>& dimensions );
+
+private:
+    Tensor( const std::vector<size_t>& dimensions );
+public:
+
+    static Tensor zeros( const std::vector<size_t>& dimensions );
 
     void print() const;
     void printGrad() const;
@@ -46,8 +47,8 @@ struct Tensor {
     inline void zeroGrad() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
 
 
-    std::vector<int> stridesFromDimensions(const std::vector<size_t>& dimensions) const;
-    int lengthFromDimensions(const std::vector<size_t>& dimensions) const;
+    static std::vector<int> stridesFromDimensions(const std::vector<size_t>& dimensions);
+    static int lengthFromDimensions(const std::vector<size_t>& dimensions);
     int indicesToLocationIn1dArray(const std::vector<int>& indices) const;
     std::vector<int> locationIn1dArrayToIndices(int location) const;
 
@@ -65,7 +66,7 @@ struct Tensor {
 
 private:    
     void printRecursively(int start, int dimension, bool printByBlocks, bool printGrad) const;
-    inline void checkIndexDimension( int dimension ) const;
+    // inline void checkIndexDimension( int dimension ) const;
     inline void checkValidityOfDimension( int dimension ) const;
 
 };

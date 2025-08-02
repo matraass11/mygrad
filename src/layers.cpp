@@ -9,14 +9,14 @@ static const std::vector<size_t> defaultDimensions = {32, 100};
 // we have to initialize the output tensor with some dimensions, so we pick some arbitrary ones.
 // when needed, the dimensions are adjusted
 
-Layer::Layer() : outputTensor(defaultDimensions) {}
+Layer::Layer() : outputTensor(Tensor::zeros(defaultDimensions)) {}
 
 void Layer::setInputTensorPointer( Tensor* inputTensor) {
     this->currentInputTensor = inputTensor;
 }
 
 void Layer::adjustOutTensorDimensions( const std::vector<size_t>& newDimensions ) {
-    outputTensor = Tensor( newDimensions );
+    outputTensor = Tensor::zeros( newDimensions );
 }
 
 
@@ -33,7 +33,7 @@ LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures) : //default ini
 
 void LinearLayer::forward( Tensor& inputTensor ) {
     
-    checkDimensions(inputTensor); // we'll remove that later if the model guarantees that the dimensions are correct
+    checkDimensions(inputTensor); 
     setInputTensorPointer( &inputTensor );
     matmulWithBias();
 }

@@ -12,6 +12,9 @@ using namespace mygrad;
 
 int main(int argc, char* argv[]) {
 
+    Tensor t = Tensor::zeros( {1, 2, 3, 444, 5555555, 6666, 9999999} );
+    t.print();
+
     if (argc != 2) {
         std::cerr << "Usage: " << argv[0] << " <train|test|show>\n";
         return 1;

@@ -3,18 +3,25 @@
 #include <format>
 #include <cmath>
 #include <algorithm>
+#include <stdexcept>
 #include "mygrad/tensor.hpp"
 
 #include "mygrad/helper.hpp"
 
 namespace mygrad {
 
-Tensor::Tensor( const std::vector<size_t>& dimensions ) : 
+Tensor::Tensor( const std::vector<size_t>& dimensions )
+try:
     length(lengthFromDimensions(dimensions)),
     dimensions(dimensions),
     strides(stridesFromDimensions(dimensions)),
     data(std::make_unique<dtype[]>(length)),
     grads(std::make_unique<dtype[]>(length)) {}
+catch(const std::bad_alloc& e) {
+    std::cerr << "check if the dimensions provided for tensor are not too big. dimensions: \n" << dimensions;
+    throw;
+}
+
 
 Tensor::Tensor( const std::vector<dtype>& dataVector,
                 const std::vector<size_t>& dimensions ) : 
@@ -30,6 +37,10 @@ Tensor::Tensor( const std::vector<dtype>& dataVector,
                 exit(1);
             }
     }
+
+Tensor Tensor::zeros( const std::vector<size_t>& dimensions ) {
+    return Tensor(dimensions);
+}
 
 
 void Tensor::print() const {
@@ -52,7 +63,7 @@ void Tensor::printGrad() const {
     std::cout << "\n\n";
 }
 
-int Tensor::lengthFromDimensions(const std::vector<size_t>& dimensions) const {
+int Tensor::lengthFromDimensions(const std::vector<size_t>& dimensions) {
     size_t length = 1;
     for (int i=0; i<dimensions.size(); i++){
         length *= dimensions[i];
@@ -60,7 +71,7 @@ int Tensor::lengthFromDimensions(const std::vector<size_t>& dimensions) const {
     return length;
 }
 
-std::vector<int> Tensor::stridesFromDimensions(const std::vector<size_t>& dimensions) const {
+std::vector<int> Tensor::stridesFromDimensions(const std::vector<size_t>& dimensions) {
     std::vector<int> strides(dimensions.size());
     int currentStride = 1;
     for (int i = strides.size()-1; i >= 0; i--) {
@@ -141,7 +152,7 @@ Tensor Tensor::operator+( const Tensor& other ) const {
         std::cerr << "dimensions must match for unary operations, exiting\n";
         exit(1);
     }
-    Tensor output(dimensions);
+    Tensor output(zeros(dimensions));
     for (int i = 0; i < length; i++) {
         output.data[i] = data[i] + other.data[i];
     }
@@ -153,7 +164,7 @@ Tensor Tensor::operator-( const Tensor& other ) const {
         std::cerr << "dimensions must match for unary operations, exiting\n";
         exit(1);
     }
-    Tensor output(dimensions);
+    Tensor output(zeros(dimensions));
     for (int i = 0; i < length; i++) {
         output.data[i] = data[i] - other.data[i];
     }
@@ -168,7 +179,7 @@ Tensor Tensor::substractColumn( const Tensor& column ) const {
             exit(1);
     }
 
-    Tensor output(dimensions);
+    Tensor output(zeros(dimensions));
     for (int i = 0; i < length; i++) {
         output.data[i] = data[i] - column.data[i/dimensions[1]];
     }
@@ -183,7 +194,7 @@ Tensor Tensor::addColumn( const Tensor& column ) const {
             exit(1);
     }
 
-    Tensor output(dimensions);
+    Tensor output(zeros(dimensions));
     for (int i = 0; i < length; i++) {
         output.data[i] = data[i] + column.data[i/dimensions[1]];
     }
@@ -199,7 +210,7 @@ void Tensor::checkValidityOfDimension( int dimension ) const {
 
 
 Tensor Tensor::exp() const {
-    Tensor expedTensor( dimensions );
+    Tensor expedTensor( zeros(dimensions) );
     for (int i = 0; i < length; i++) {
         expedTensor.data[i] = std::exp(data[i]);
     }
@@ -207,7 +218,7 @@ Tensor Tensor::exp() const {
 }
 
 Tensor Tensor::log() const {
-    Tensor loggedTensor( dimensions );
+    Tensor loggedTensor( zeros(dimensions) );
     for (int i = 0; i < length; i++) {
         loggedTensor.data[i] = std::log(data[i]);
     }
@@ -245,7 +256,7 @@ Tensor Tensor::sum(int dim) const {
 
     std::vector<size_t> dimsOfSumTensor = dimensions;
     dimsOfSumTensor[dim] = 1;
-    Tensor sumTensor( dimsOfSumTensor );
+    Tensor sumTensor( zeros(dimsOfSumTensor) );
 
     size_t offsetBetweenElementsOfThisDim = strides[dim];
     size_t totalSizeOfThisDim = dimensions[dim] * offsetBetweenElementsOfThisDim;
