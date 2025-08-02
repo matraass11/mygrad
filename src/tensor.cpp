@@ -17,7 +17,8 @@ try:
     strides(stridesFromDimensions(dimensions)),
     data(std::make_unique<dtype[]>(length)),
     grads(std::make_unique<dtype[]>(length)) {}
-catch(const std::bad_alloc& e) {
+
+catch (const std::bad_alloc& e) {
     std::cerr << "check if the dimensions provided for tensor are not too big. dimensions: \n" << dimensions;
     throw;
 }
