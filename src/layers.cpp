@@ -39,11 +39,11 @@ void LinearLayer::forward( Tensor& inputTensor ) {
 }
 
 void LinearLayer::backward() {
-    matmulWithBias_backward();
+    matmulWithBiasBackward();
     setInputTensorPointer( nullptr );
 }
 
-void LinearLayer::matmulWithBias_backward() {
+void LinearLayer::matmulWithBiasBackward() {
     if (!(currentInputTensor)) { 
         std::cerr << "backward before forward impossible. exiting\n";
         exit(1);

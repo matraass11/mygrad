@@ -41,7 +41,7 @@ struct LinearLayer : Layer {
     
 private:
     void matmulWithBias();
-    void matmulWithBias_backward();
+    void matmulWithBiasBackward();
 
     void checkDimensions( const Tensor& inputTensor ) override; 
 };
