@@ -92,7 +92,7 @@ void LinearLayer::matmulWithBias() {
 
     for (int row=0; row < outputTensor.dimensions[0]; row++) {
         for (int column=0; column < outputTensor.dimensions[1]; column++) {
-            double& currentElement = outputTensor.at({row, column}) = biases.at({0, column});
+            dtype& currentElement = outputTensor.at({row, column}) = biases.at({0, column});
 
             for (int dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
                 currentElement +=
