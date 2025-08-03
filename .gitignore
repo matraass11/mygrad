@@ -1,11 +1,11 @@
 .vscode
 *.dSYM
-datasets
-*.o
 
+*.o
 .*
 !.gitignore
 
+catsData
 main
 test.cpp
 build*
