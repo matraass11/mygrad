@@ -33,7 +33,7 @@ LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures) : //default ini
 
 void LinearLayer::forward( Tensor& inputTensor ) {
     
-    checkDimensions(inputTensor); 
+    manageDimensions(inputTensor); 
     setInputTensorPointer( &inputTensor );
     matmulWithBias();
 }
@@ -66,7 +66,7 @@ void LinearLayer::matmulWithBiasBackward() {
     }
 }
 
-void LinearLayer::checkDimensions(const Tensor& inputTensor) {
+void LinearLayer::manageDimensions(const Tensor& inputTensor) {
     if (
         inputTensor.dimensions.size() != 2
     ) {
@@ -103,7 +103,7 @@ void LinearLayer::matmulWithBias() {
 }
 
 void ReLU::forward( Tensor& inputTensor ) {
-    checkDimensions( inputTensor );
+    manageDimensions( inputTensor );
     setInputTensorPointer( &inputTensor );
 
     for (int i = 0; i < currentInputTensor->length; i++) {
@@ -111,7 +111,7 @@ void ReLU::forward( Tensor& inputTensor ) {
     }
 }
 
-void ReLU::checkDimensions( const Tensor& inputTensor ) {
+void ReLU::manageDimensions( const Tensor& inputTensor ) {
     if (inputTensor.dimensions != outputTensor.dimensions ) {
         adjustOutTensorDimensions(inputTensor.dimensions);
     } 
@@ -124,5 +124,70 @@ void ReLU::backward() {
 
     setInputTensorPointer(nullptr);
 }
+
+Conv2d::Conv2d( size_t inChannels, size_t outChannels, size_t kernelSize, size_t stride, size_t paddingSize ) : 
+        inChannels(inChannels), outChannels(outChannels), kernelSize(kernelSize), stride(stride), paddingSize(paddingSize),
+        kernels( KaimingWeightsVector(kernelSize*kernelSize*inChannels, outChannels),
+                 { outChannels, inChannels, kernelSize, kernelSize } ),
+        biases( std::vector<dtype>(outChannels, 0), {outChannels} ) {}
+
+
+dtype Conv2d::convolve(size_t pictureIndex, size_t filterIndex, size_t inputRow, size_t inputCol) {
+    // filter = kernels[filterIndex]
+    dtype sum = 0;
+
+    for (size_t inputChannel = 0; inputChannel < inChannels; inputChannel++) {
+        for (size_t kernelRow = 0; kernelRow < kernelSize; kernelRow++) {
+            for (size_t kernelCol = 0; kernelCol < kernelSize; kernelCol++) {
+                sum +=  inputTensor.at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) * 
+                        kernels.at( {filterIndex, inputChannel, kernelRow, kernelCol} );
+            }
+        }
+    }
+
+    return sum;
+}
+
+
+void Conv2d::forward(Tensor& inputTensor) {
+    manageDimensions( inputTensor );
+    setInputTensorPointer( &inputTensor );
+
+    size_t locInOutput = 0;
+
+    for (size_t picture = 0; picture < inputTensor.dimensions[0]; picture++) {
+        for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
+            for (size_t row = -paddingSize; row < inputTensor.dimensions[2] + paddingSize - kernelSize + 1; row += stride) {
+                for (size_t column = -paddingSize; column < inputTensor.dimensions[3] + paddingSize - kernelSize + 1; column += stride) {
+                
+                    outputTensor.data[locInOutput] = convolve(picture, channelOut, row, column);
+                    locInOutput++;
+                }
+            }
+        }
+    }
+}
+
+void Conv2d::backward() {
+
+}
+
+
+void Conv2d::manageDimensions( const Tensor& inputTensor ) {
+    if (inputTensor.dimensions.size() != 4) throw std::runtime_error("input tensor dimensionality must be four for Conv2d");
+
+    auto convolvedSize = [this]( size_t size) {
+        return (size + 2*paddingSize - kernelSize)/stride + 1;
+    };
+
+    std::vector<size_t> neededOutTensorDims = { inputTensor.dimensions[0],
+                                                outChannels,
+                                                convolvedSize(inputTensor.dimensions[2]),
+                                                convolvedSize(inputTensor.dimensions[3]) };
+    if (outputTensor.dimensions != neededOutTensorDims) {
+        adjustOutTensorDimensions(neededOutTensorDims);
+    }
+}
+
 
 } // namespace mygrad

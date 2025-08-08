@@ -22,7 +22,7 @@ struct Layer {
     
 protected:
     inline void setInputTensorPointer( Tensor* inputTensor ); // relies on the input tensor not changing
-    virtual void checkDimensions( const Tensor& inputTensor ) = 0; 
+    virtual void manageDimensions( const Tensor& inputTensor ) = 0; 
     inline void adjustOutTensorDimensions( const std::vector<size_t>& newDimensions );
 };
 
@@ -36,14 +36,14 @@ struct LinearLayer : Layer {
     LinearLayer( size_t inFeatures, size_t outFeatures, const std::vector<dtype>& data);
     void forward( Tensor& inputTensor ) override;
     void backward() override;
-    std::vector<Tensor*> parameterTensors() override { return {&weights, &biases}; }
-    std::vector<Tensor*> nonParameterTensors() override { return {&outputTensor}; }
+    std::vector<Tensor*> parameterTensors() override { return { &weights, &biases }; }
+    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
     
 private:
     void matmulWithBias();
     void matmulWithBiasBackward();
 
-    void checkDimensions( const Tensor& inputTensor ) override; 
+    void manageDimensions( const Tensor& inputTensor ) override; 
 };
 
 
@@ -57,8 +57,29 @@ struct ReLU : Layer {
     std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
 
 private:
-    inline void checkDimensions( const Tensor& inputTensor ) override;
+    inline void manageDimensions( const Tensor& inputTensor ) override;
 
 };
+
+
+struct Conv2d : Layer {
+    const size_t inChannels, outChannels, kernelSize, stride, paddingSize;
+    Tensor kernels;
+    Tensor biases;
+
+    Conv2d( size_t inChannels, size_t outChannels, size_t kernelSize, size_t stride, size_t paddingSize );
+
+    void forward( Tensor& inputTensor ) override;
+    void backward() override;
+    std::vector<Tensor*> parameterTensors() override { return { &kernels, &biases }; }
+    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
+
+private:
+    dtype convolve(size_t pictureIndex, size_t filterIndex, size_t inputRow, size_t inputCol); 
+
+    inline void manageDimensions( const Tensor& inputTensor ) override;
+};
+
+
 
 } // namespace mygrad
