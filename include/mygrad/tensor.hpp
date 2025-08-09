@@ -28,13 +28,13 @@ public:
     void printGrad() const;
 
 
-    inline dtype& at(const std::vector<int>& indices)          { return data[indicesToLocationIn1dArray(indices)]; }
+    inline dtype& at(const std::vector<size_t>& indices)          { return data[indicesToLocationIn1dArray(indices)]; }
 
-    inline dtype at(const std::vector<int>& indices)     const { return data[indicesToLocationIn1dArray(indices)]; }
+    inline dtype at(const std::vector<size_t>& indices)     const { return data[indicesToLocationIn1dArray(indices)]; }
 
-    inline dtype& gradAt(const std::vector<int>& indices)      { return grads[indicesToLocationIn1dArray(indices)]; }
+    inline dtype& gradAt(const std::vector<size_t>& indices)      { return grads[indicesToLocationIn1dArray(indices)]; }
 
-    inline dtype gradAt(const std::vector<int>& indices) const { return grads[indicesToLocationIn1dArray(indices)]; }
+    inline dtype gradAt(const std::vector<size_t>& indices) const { return grads[indicesToLocationIn1dArray(indices)]; }
 
 
     inline void reshape(const std::vector<size_t>& newDimensions) {
@@ -48,9 +48,9 @@ public:
 
 
     static std::vector<int> stridesFromDimensions(const std::vector<size_t>& dimensions);
-    static int lengthFromDimensions(const std::vector<size_t>& dimensions);
-    int indicesToLocationIn1dArray(const std::vector<int>& indices) const;
-    std::vector<int> locationIn1dArrayToIndices(int location) const;
+    static size_t lengthFromDimensions(const std::vector<size_t>& dimensions);
+    size_t indicesToLocationIn1dArray(const std::vector<size_t>& indices) const;
+    std::vector<size_t> locationIn1dArrayToIndices(size_t location) const;
 
     Tensor operator+( const Tensor& other ) const;
     Tensor operator-( const Tensor& other ) const;

@@ -33,10 +33,9 @@ Tensor::Tensor( const std::vector<dtype>& dataVector,
         std::copy(dataVector.begin(), dataVector.end(), data.get());
 
         if (dataVector.size() != length) {
-            std::cerr << "tensor initialized with vector of wrong size. exiting\n"; 
-                std::cerr << dataVector.size() << " != " << length << "\n";
-                exit(1);
-            }
+            std::cerr << dataVector.size() << " != " << length << "\n";
+            throw std::runtime_error("tensor initialized with vector of wrong size"); 
+        }
     }
 
 Tensor Tensor::zeros( const std::vector<size_t>& dimensions ) {
@@ -64,9 +63,9 @@ void Tensor::printGrad() const {
     std::cout << "\n\n";
 }
 
-int Tensor::lengthFromDimensions(const std::vector<size_t>& dimensions) {
+size_t Tensor::lengthFromDimensions(const std::vector<size_t>& dimensions) {
     size_t length = 1;
-    for (int i=0; i<dimensions.size(); i++){
+    for (size_t i=0; i<dimensions.size(); i++){
         length *= dimensions[i];
     }
     return length;
@@ -82,31 +81,29 @@ std::vector<int> Tensor::stridesFromDimensions(const std::vector<size_t>& dimens
     return strides;
 }
 
-int Tensor::indicesToLocationIn1dArray(const std::vector<int>& indices) const {
+size_t Tensor::indicesToLocationIn1dArray(const std::vector<size_t>& indices) const {
     if (indices.size() != dimensions.size()){
-        std::cerr << "invalid size of indices to convert to location in 1d, exiting\n";
-        exit(1);
+        throw std::runtime_error("invalid size of indices to convert to location in 1d");
     }  
-    int locationOfElementInDataArray = 0;
-    int dimensionality = dimensions.size();
-    for (int i=0; i < dimensionality; i++){
+    size_t locationOfElementInDataArray = 0;
+    size_t dimensionality = dimensions.size();
+    for (size_t i=0; i < dimensionality; i++){
         locationOfElementInDataArray += indices[i] * strides[i];
     }
     if (locationOfElementInDataArray > length){
-        std::cerr << "indices to be converted to location in 1d are out of bound, exiting\n";
-        exit(1);
+        throw std::runtime_error("indices to be converted to location in 1d are out of bound");
     }
     return locationOfElementInDataArray;
 }
 
-std::vector<int> Tensor::locationIn1dArrayToIndices(int location) const {
+std::vector<size_t> Tensor::locationIn1dArrayToIndices(size_t location) const {
     if (location < 0 or location >= length) {
         std::cerr << location << " - location\n";
         throw std::runtime_error("location to be converted to indices is out of range");
     }
 
-    std::vector<int> indices(dimensions.size());
-    for (int i = 0; i < indices.size() ; i++) {
+    std::vector<size_t> indices(dimensions.size());
+    for (size_t i = 0; i < indices.size() ; i++) {
         indices[i] = location / strides[i];
         location -= indices[i] * strides[i];
     }
@@ -150,8 +147,7 @@ void Tensor::printRecursively(int start, int dimension, bool printByBlocks, bool
 
 Tensor Tensor::operator+( const Tensor& other ) const {
     if (dimensions != other.dimensions) {
-        std::cerr << "dimensions must match for unary operations, exiting\n";
-        exit(1);
+        throw std::runtime_error("dimensions must match for unary operations");
     }
     Tensor output(zeros(dimensions));
     for (int i = 0; i < length; i++) {
@@ -162,8 +158,7 @@ Tensor Tensor::operator+( const Tensor& other ) const {
 
 Tensor Tensor::operator-( const Tensor& other ) const {
     if (dimensions != other.dimensions) {
-        std::cerr << "dimensions must match for unary operations, exiting\n";
-        exit(1);
+        throw std::runtime_error("dimensions must match for unary operations");
     }
     Tensor output(zeros(dimensions));
     for (int i = 0; i < length; i++) {
@@ -176,8 +171,7 @@ Tensor Tensor::substractColumn( const Tensor& column ) const {
 
     if (dimensions.size() != 2 or column.dimensions.size() != 2 
         or column.dimensions[0] != dimensions[0] or column.dimensions[1] != 1) {
-            std::cerr << "wrond dims for substractColumn, exiting\n";
-            exit(1);
+            throw std::runtime_error("wrond dims for substractColumn");
     }
 
     Tensor output(zeros(dimensions));
@@ -191,8 +185,7 @@ Tensor Tensor::addColumn( const Tensor& column ) const {
 
     if (dimensions.size() != 2 or column.dimensions.size() != 2 
         or column.dimensions[0] != dimensions[0] or column.dimensions[1] != 1) {
-            std::cerr << "wrond dims for substractColumn, exiting\n";
-            exit(1);
+            throw std::runtime_error("wrond dims for substractColumn");
     }
 
     Tensor output(zeros(dimensions));
@@ -204,8 +197,7 @@ Tensor Tensor::addColumn( const Tensor& column ) const {
 
 void Tensor::checkValidityOfDimension( int dimension ) const {
     if ( dimension >= dimensions.size() or dimension < 0) {
-        std::cerr << "dimension out of range, exiting\n";
-        exit(1);
+        throw std::runtime_error("dimension out of range, exiting");
     }
 }
 
@@ -285,7 +277,7 @@ Tensor Tensor::argmax(int dim) const {
     int locInArgmax;
     for (int i = 0; i < length; i++) {
         locInArgmax = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
-        std::vector<int> currentMaxIndices = locationIn1dArrayToIndices(i);
+        std::vector<size_t> currentMaxIndices = locationIn1dArrayToIndices(i);
         currentMaxIndices[dim] = argmaxTensor.data[locInArgmax];
         if (argmaxTensor.data[locInArgmax] == INT_MIN or this->data[i] > this->at(currentMaxIndices)) {
             argmaxTensor.data[locInArgmax] = locationIn1dArrayToIndices(i)[dim];

@@ -49,11 +49,11 @@ void LinearLayer::matmulWithBiasBackward() {
         exit(1);
     }
 
-    for (int row=0; row < outputTensor.dimensions[0]; row++) {
-        for (int column=0; column < outputTensor.dimensions[1]; column++) {
+    for (size_t row=0; row < outputTensor.dimensions[0]; row++) {
+        for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
             dtype currentGradPassedDown = outputTensor.gradAt({row, column});
             
-            for (int dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
+            for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
                 currentInputTensor->gradAt({row, dotProductIterator}) +=
                     weights.at({dotProductIterator, column}) * currentGradPassedDown;
 
@@ -90,11 +90,11 @@ void LinearLayer::manageDimensions(const Tensor& inputTensor) {
 
 void LinearLayer::matmulWithBias() {
 
-    for (int row=0; row < outputTensor.dimensions[0]; row++) {
-        for (int column=0; column < outputTensor.dimensions[1]; column++) {
+    for (size_t row=0; row < outputTensor.dimensions[0]; row++) {
+        for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
             dtype& currentElement = outputTensor.at({row, column}) = biases.at({0, column});
 
-            for (int dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
+            for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
                 currentElement +=
                     currentInputTensor->at({row, dotProductIterator}) * weights.at({dotProductIterator, column});
             }
@@ -132,14 +132,14 @@ Conv2d::Conv2d( size_t inChannels, size_t outChannels, size_t kernelSize, size_t
         biases( std::vector<dtype>(outChannels, 0), {outChannels} ) {}
 
 
-dtype Conv2d::convolve(size_t pictureIndex, size_t filterIndex, size_t inputRow, size_t inputCol) {
+dtype Conv2d::convolve(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol) {
     // filter = kernels[filterIndex]
     dtype sum = 0;
 
     for (size_t inputChannel = 0; inputChannel < inChannels; inputChannel++) {
         for (size_t kernelRow = 0; kernelRow < kernelSize; kernelRow++) {
             for (size_t kernelCol = 0; kernelCol < kernelSize; kernelCol++) {
-                sum +=  inputTensor.at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) * 
+                sum +=  currentInputTensor->at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) * 
                         kernels.at( {filterIndex, inputChannel, kernelRow, kernelCol} );
             }
         }
@@ -157,10 +157,13 @@ void Conv2d::forward(Tensor& inputTensor) {
 
     for (size_t picture = 0; picture < inputTensor.dimensions[0]; picture++) {
         for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
-            for (size_t row = -paddingSize; row < inputTensor.dimensions[2] + paddingSize - kernelSize + 1; row += stride) {
-                for (size_t column = -paddingSize; column < inputTensor.dimensions[3] + paddingSize - kernelSize + 1; column += stride) {
+            for (int row = -paddingSize; row < inputTensor.dimensions[2] + paddingSize - kernelSize + 1; row += stride) {
+                std::cout << row << "\n";
+
+                for (int column = -paddingSize; column < inputTensor.dimensions[3] + paddingSize - kernelSize + 1; column += stride) {
                 
                     outputTensor.data[locInOutput] = convolve(picture, channelOut, row, column);
+                    std::cout << outputTensor.data[locInOutput] << ", ";
                     locInOutput++;
                 }
             }
@@ -176,7 +179,7 @@ void Conv2d::backward() {
 void Conv2d::manageDimensions( const Tensor& inputTensor ) {
     if (inputTensor.dimensions.size() != 4) throw std::runtime_error("input tensor dimensionality must be four for Conv2d");
 
-    auto convolvedSize = [this]( size_t size) {
+    auto convolvedSize = [this](size_t size) {
         return (size + 2*paddingSize - kernelSize)/stride + 1;
     };
 

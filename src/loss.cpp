@@ -37,19 +37,19 @@ dtype CrossEntropyLoss::operator()( Tensor& logits, const Tensor& labels ) {
 
     dtype loss = 0;
     size_t elementsInBatch = logits.dimensions[0];
-    for (int i=0; i < elementsInBatch; i++) {
-        loss -= logSoftmaxedLogits.at({ i, static_cast<int>(labels.data[i]) });
+    for (size_t i=0; i < elementsInBatch; i++) {
+        loss -= logSoftmaxedLogits.at({ i, static_cast<size_t>(labels.data[i]) });
     }
     return loss/static_cast<dtype>(elementsInBatch);
 } 
 
 void CrossEntropyLoss::backward() {
     
-    for (int i=0; i < labels->length; i++) {
-        currentSoftmaxOutput.at({ i, static_cast<int>(labels->data[i]) }) -= 1; // substract the one hot encoded vector of labels
+    for (size_t i=0; i < labels->length; i++) {
+        currentSoftmaxOutput.at({ i, static_cast<size_t>(labels->data[i]) }) -= 1; // substract the one hot encoded vector of labels
     }
 
-    for (int i=0; i < logits->length; i++) {
+    for (size_t i=0; i < logits->length; i++) {
         logits->grads[i] += currentSoftmaxOutput.data[i] / static_cast<dtype>(logits->dimensions[0]);
     }
 }
