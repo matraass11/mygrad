@@ -21,9 +21,12 @@ int main(int argc, char* argv[]) {
     const size_t neurons = 100;
 
     Model model (
-        LinearLayer( pixelsInImage, neurons ),
+        // LinearLayer( pixelsInImage, neurons ),
+        Conv2d(1, 16, 3, 2, 1),
         ReLU(),
-        LinearLayer( neurons, neurons ),
+        // LinearLayer( neurons, neurons ),
+        Reshape( {} )
+        LinearLayer( )
         ReLU(),
         LinearLayer( neurons, numberOfClasses )
     );

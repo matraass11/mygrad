@@ -77,11 +77,30 @@ struct Conv2d : Layer {
     std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
 
 private:
-    dtype convolve(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol); 
+    dtype convolve(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol) const;
+    void convolveBackward(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol, size_t locInOutput);
 
     inline void manageDimensions( const Tensor& inputTensor ) override;
 };
 
+
+struct Reshape : Layer {
+
+    const std::vector<int> newDimensions;
+    
+    Reshape( const std::vector<int>& newDimensions );
+    
+    void forward( Tensor& inputTensor ) override;
+    void backward() override;
+    
+    std::vector<Tensor*> parameterTensors() override { return {}; }
+    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
+    
+private:
+
+    inline void manageDimensions( const Tensor& inputTensor ) override;
+    bool flexible;
+};
 
 
 } // namespace mygrad
