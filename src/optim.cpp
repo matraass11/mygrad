@@ -12,7 +12,7 @@ Adam::Adam(const std::vector<Tensor*>& parameters, dtype learningRate,
 
             paramsAndGrads.reserve(sizeOfParamsAndGradsFromParameters(parameters));
             for (const Tensor* const param : parameters) {
-                for (int i = 0; i < param->length; i++) {
+                for (size_t i = 0; i < param->length; i++) {
                     paramsAndGrads.push_back( dataAndGrads( param->data[i], param->grads[i] ) );
                 }
             }
@@ -20,7 +20,7 @@ Adam::Adam(const std::vector<Tensor*>& parameters, dtype learningRate,
 
 void Adam::step() {
     stepsMade++;
-    for (int i = 0; i < paramsAndGrads.size(); i++) {
+    for (size_t i = 0; i < paramsAndGrads.size(); i++) {
         dtype& data = paramsAndGrads[i].data, &grad = paramsAndGrads[i].grad;
         dtype& gradRunAvg = paramsAndGrads[i].gradRunAvg, &gradSqRunAvg = paramsAndGrads[i].gradSqRunAvg;
         grad += weightDecay*data;

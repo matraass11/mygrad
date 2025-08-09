@@ -110,14 +110,14 @@ std::vector<size_t> Tensor::locationIn1dArrayToIndices(size_t location) const {
     return indices;
 }
 
-void Tensor::printRecursively(int start, int dimension, bool printByBlocks, bool printGrad) const {
+void Tensor::printRecursively(size_t start, size_t dimension, bool printByBlocks, bool printGrad) const {
     int increment = strides[dimension];
     size_t thisDimShape = dimensions[dimension];
     std::cout << "[";
     if ( printByBlocks ) {
         std::cout << "  ";
     }
-    for (int i=0; i < thisDimShape; i++) {
+    for (size_t i=0; i < thisDimShape; i++) {
         if (dimension == dimensions.size() - 1){
             if (printGrad) {
                 std::cout << std::format("{:#.4F}", grads[start+i]);
@@ -150,7 +150,7 @@ Tensor Tensor::operator+( const Tensor& other ) const {
         throw std::runtime_error("dimensions must match for unary operations");
     }
     Tensor output(zeros(dimensions));
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         output.data[i] = data[i] + other.data[i];
     }
     return output;
@@ -161,7 +161,7 @@ Tensor Tensor::operator-( const Tensor& other ) const {
         throw std::runtime_error("dimensions must match for unary operations");
     }
     Tensor output(zeros(dimensions));
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         output.data[i] = data[i] - other.data[i];
     }
     return output;
@@ -175,7 +175,7 @@ Tensor Tensor::substractColumn( const Tensor& column ) const {
     }
 
     Tensor output(zeros(dimensions));
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         output.data[i] = data[i] - column.data[i/dimensions[1]];
     }
     return output;
@@ -189,14 +189,14 @@ Tensor Tensor::addColumn( const Tensor& column ) const {
     }
 
     Tensor output(zeros(dimensions));
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         output.data[i] = data[i] + column.data[i/dimensions[1]];
     }
     return output;
 }
 
 void Tensor::checkValidityOfDimension( int dimension ) const {
-    if ( dimension >= dimensions.size() or dimension < 0) {
+    if ( dimension < 0 or dimension >= static_cast<int>(dimensions.size())) {
         throw std::runtime_error("dimension out of range, exiting");
     }
 }
@@ -204,7 +204,7 @@ void Tensor::checkValidityOfDimension( int dimension ) const {
 
 Tensor Tensor::exp() const {
     Tensor expedTensor( zeros(dimensions) );
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         expedTensor.data[i] = std::exp(data[i]);
     }
     return expedTensor;
@@ -212,7 +212,7 @@ Tensor Tensor::exp() const {
 
 Tensor Tensor::log() const {
     Tensor loggedTensor( zeros(dimensions) );
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         loggedTensor.data[i] = std::log(data[i]);
     }
     return loggedTensor;
@@ -231,7 +231,7 @@ Tensor Tensor::max(int dim) const {
     size_t offsetBetweenElementsOfThisDim = strides[dim];
     size_t totalSizeOfThisDim = dimensions[dim] * offsetBetweenElementsOfThisDim;
     int locInMax;
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         locInMax = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
         if (this->data[i] > maxTensor.data[locInMax]) {
             maxTensor.data[locInMax] = this->data[i];
@@ -254,7 +254,7 @@ Tensor Tensor::sum(int dim) const {
     size_t offsetBetweenElementsOfThisDim = strides[dim];
     size_t totalSizeOfThisDim = dimensions[dim] * offsetBetweenElementsOfThisDim;
     int locInSum;
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         locInSum = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
         sumTensor.data[locInSum] += this->data[i];
     }
@@ -274,8 +274,8 @@ Tensor Tensor::argmax(int dim) const {
 
     size_t offsetBetweenElementsOfThisDim = strides[dim];
     size_t totalSizeOfThisDim = dimensions[dim] * offsetBetweenElementsOfThisDim;
-    int locInArgmax;
-    for (int i = 0; i < length; i++) {
+    size_t locInArgmax;
+    for (size_t i = 0; i < length; i++) {
         locInArgmax = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
         std::vector<size_t> currentMaxIndices = locationIn1dArrayToIndices(i);
         currentMaxIndices[dim] = argmaxTensor.data[locInArgmax];
@@ -289,7 +289,7 @@ Tensor Tensor::argmax(int dim) const {
 
 dtype Tensor::mean() const {
     dtype sum = 0;
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         sum += data[i];
     }
     return sum / length;
@@ -298,7 +298,7 @@ dtype Tensor::mean() const {
 dtype Tensor::std() const {
     dtype sumOfSquareDifferences = 0;
     dtype mean = this->mean();
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         sumOfSquareDifferences += (data[i] - mean)*(data[i] - mean);
     }
 

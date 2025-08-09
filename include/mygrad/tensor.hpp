@@ -65,7 +65,7 @@ public:
     dtype std() const;
 
 private:    
-    void printRecursively(int start, int dimension, bool printByBlocks, bool printGrad) const;
+    void printRecursively(size_t start, size_t dimension, bool printByBlocks, bool printGrad) const;
     // inline void checkIndexDimension( int dimension ) const;
     inline void checkValidityOfDimension( int dimension ) const;
 
