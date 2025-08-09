@@ -132,6 +132,12 @@ Conv2d::Conv2d( size_t inChannels, size_t outChannels, size_t kernelSize, size_t
         biases( std::vector<dtype>(outChannels, 0), {outChannels} ) {}
 
 
+void Conv2d::print() {
+    std::cout << "conv2d. input channels: " << inChannels << ", output channels: " << outChannels << ", kernel size: "
+            << kernelSize << ", stride: " << stride << ", padding size: " << paddingSize << "\n";
+}
+
+
 dtype Conv2d::convolve(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol) {
     // filter = kernels[filterIndex]
     dtype sum = 0;
@@ -139,6 +145,13 @@ dtype Conv2d::convolve(size_t pictureIndex, size_t filterIndex, int inputRow, in
     for (size_t inputChannel = 0; inputChannel < inChannels; inputChannel++) {
         for (size_t kernelRow = 0; kernelRow < kernelSize; kernelRow++) {
             for (size_t kernelCol = 0; kernelCol < kernelSize; kernelCol++) {
+
+                if (inputRow + kernelRow < 0 or inputCol + kernelCol < 0 or 
+                    inputRow + kernelRow >= currentInputTensor->dimensions[2] or
+                    inputCol + kernelCol >= currentInputTensor->dimensions[3]) {
+                    continue;
+                }
+                
                 sum +=  currentInputTensor->at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) * 
                         kernels.at( {filterIndex, inputChannel, kernelRow, kernelCol} );
             }
@@ -157,13 +170,12 @@ void Conv2d::forward(Tensor& inputTensor) {
 
     for (size_t picture = 0; picture < inputTensor.dimensions[0]; picture++) {
         for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
-            for (int row = -paddingSize; row < inputTensor.dimensions[2] + paddingSize - kernelSize + 1; row += stride) {
-                std::cout << row << "\n";
+            for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(inputTensor.dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
 
-                for (int column = -paddingSize; column < inputTensor.dimensions[3] + paddingSize - kernelSize + 1; column += stride) {
+                for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
                 
                     outputTensor.data[locInOutput] = convolve(picture, channelOut, row, column);
-                    std::cout << outputTensor.data[locInOutput] << ", ";
+                    // std::cout << outputTensor.data[locInOutput] << ", ";
                     locInOutput++;
                 }
             }

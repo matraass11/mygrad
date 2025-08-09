@@ -69,6 +69,8 @@ struct Conv2d : Layer {
 
     Conv2d( size_t inChannels, size_t outChannels, size_t kernelSize, size_t stride, size_t paddingSize );
 
+    void print();
+
     void forward( Tensor& inputTensor ) override;
     void backward() override;
     std::vector<Tensor*> parameterTensors() override { return { &kernels, &biases }; }
