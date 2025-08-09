@@ -16,9 +16,15 @@ int main() {
 
             {1, 2, 3, 3}); 
 
-    std::cout << t.dimensions;
+    // std::cout << t.dimensions;
             // 1 batch, 2 channels, 3x3
 
+    for (size_t i = 0; i < c.kernels.length; i++) {
+        c.kernels.data[i] = 1;
+    }
+
+
+    c.print();
     c.forward(t);
     c.outputTensor.print();
 
