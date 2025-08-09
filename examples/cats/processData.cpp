@@ -13,25 +13,25 @@
 
 #include "mygrad/mygrad.hpp"
 
-void visualizeImageChannel(const Tensor& images, int index, int channel) {
-    const int rows = images.dimensions[2];
-    const int cols = images.dimensions[3];
+void visualizeImageChannel(const Tensor& images, size_t index, size_t channel) {
+    const size_t rows = images.dimensions[2];
+    const size_t cols = images.dimensions[3];
 
     const char* grayRamp = " .:-=+*#%@"; // from light to dark
 
-    for (int r = 0; r < rows; ++r) {
-        for (int c = 0; c < cols; ++c) {
+    for (size_t r = 0; r < rows; ++r) {
+        for (size_t c = 0; c < cols; ++c) {
             dtype pixel = images.at({index, channel, r, c}) / 255;
             // pixel = std::max(0.0, std::min(1.0, pixel));
             if (pixel > 1 or pixel < 0) throw std::runtime_error("boooo");
-            int level = static_cast<int>(pixel * (strlen(grayRamp) - 1));
+            size_t level = static_cast<size_t>(pixel * (strlen(grayRamp) - 1));
             std::cout << grayRamp[level];
         }
         std::cout << "\n";
     }
 }
 
-void convertTensorToPng(const Tensor& imgTensor, int index, const std::string& filename) {
+void convertTensorToPng(const Tensor& imgTensor, size_t index, const std::string& filename) {
 
     if (imgTensor.dimensions.size() != 4) throw std::runtime_error("expected 4d tensor");
     
@@ -43,10 +43,10 @@ void convertTensorToPng(const Tensor& imgTensor, int index, const std::string& f
 
     unsigned char* data = new unsigned char[channels*rows*columns];
 
-    for (int row = 0; row < rows; row++) {
-        for (int col = 0; col < columns; col++) {
-            for (int channel = 0; channel < channels; channel++) {
-                int locInData = row * columns * channels + col*channels + channel;
+    for (size_t row = 0; row < rows; row++) {
+        for (size_t col = 0; col < columns; col++) {
+            for (size_t channel = 0; channel < channels; channel++) {
+                size_t locInData = row * columns * channels + col*channels + channel;
                 data[locInData] = imgTensor.at({index, channel, row, col});
             }
         }
@@ -79,11 +79,11 @@ static Tensor tensorWithImageData(std::vector<size_t> indices) {
             }
             
     
-            for (int channel = 0; channel < channels; channel++) {
-                for (int row = 0; row < rows; row++) {
-                    for (int col = 0; col < columns; col++) {
+            for (size_t channel = 0; channel < channels; channel++) {
+                for (size_t row = 0; row < rows; row++) {
+                    for (size_t col = 0; col < columns; col++) {
                         size_t locInData = row*columns*channels + col*channels + channel;
-                        dataTensor.at({static_cast<int>(i), channel, row, col}) = data[locInData];
+                        dataTensor.at({i, channel, row, col}) = data[locInData];
                     } 
                 }
             }

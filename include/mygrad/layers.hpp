@@ -75,7 +75,7 @@ struct Conv2d : Layer {
     std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
 
 private:
-    dtype convolve(size_t pictureIndex, size_t filterIndex, size_t inputRow, size_t inputCol); 
+    dtype convolve(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol); 
 
     inline void manageDimensions( const Tensor& inputTensor ) override;
 };

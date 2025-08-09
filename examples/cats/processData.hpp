@@ -14,4 +14,4 @@ struct Dataset {
 };
 
 Dataset loadCatImages(float trainSplit, float evalSplit, float testSplit);
-void convertTensorToPng(const Tensor& imgTensor, int index, const std::string& filename);
+void convertTensorToPng(const Tensor& imgTensor, size_t index, const std::string& filename);
