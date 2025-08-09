@@ -169,7 +169,7 @@ void Conv2d::print() {
 }
 
 
-dtype Conv2d::convolve(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol) {
+dtype Conv2d::convolve(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol) const {
     // filter = kernels[filterIndex]
     dtype sum = 0;
 
@@ -214,8 +214,50 @@ void Conv2d::forward(Tensor& inputTensor) {
     }
 }
 
-void Conv2d::backward() {
+void Conv2d::convolveBackward(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol, size_t locInOutput) {
+    // filter = kernels[filterIndex]
+    dtype sum = 0;
 
+    for (size_t inputChannel = 0; inputChannel < inChannels; inputChannel++) {
+        for (size_t kernelRow = 0; kernelRow < kernelSize; kernelRow++) {
+            for (size_t kernelCol = 0; kernelCol < kernelSize; kernelCol++) {
+
+                if (inputRow + kernelRow < 0 or inputCol + kernelCol < 0 or 
+                    inputRow + kernelRow >= currentInputTensor->dimensions[2] or
+                    inputCol + kernelCol >= currentInputTensor->dimensions[3]) {
+                    continue;
+                }
+
+                dtype gradPassedDown = outputTensor.grads[locInOutput];
+
+                currentInputTensor->gradAt( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) += 
+                    kernels.at( {filterIndex, inputChannel, kernelRow, kernelCol} ) * gradPassedDown;
+
+                kernels.gradAt( {filterIndex, inputChannel, kernelRow, kernelCol} ) += gradPassedDown * 
+                    currentInputTensor->at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ); 
+            }
+        }
+    }
+}
+
+void Conv2d::backward() {
+    size_t locInOutput = 0;
+
+    for (size_t picture = 0; picture < currentInputTensor->dimensions[0]; picture++) {
+        for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
+            for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(currentInputTensor->dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
+
+                for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(currentInputTensor->dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
+                
+                    outputTensor.data[locInOutput] = convolve(picture, channelOut, row, column);
+                    // std::cout << outputTensor.data[locInOutput] << ", ";
+                    locInOutput++;
+                }
+            }
+        }
+    }
+
+    setInputTensorPointer(nullptr);
 }
 
 
@@ -234,6 +276,50 @@ void Conv2d::manageDimensions( const Tensor& inputTensor ) {
         adjustOutTensorDimensions(neededOutTensorDims);
     }
 }
+
+
+Reshape::Reshape( const std::vector<int>& newDimensions ) : newDimensions(newDimensions), flexible(false) {
+    for (size_t i = 0; i < newDimensions.size(); i++) {
+        if (newDimensions[i] == -1) {
+            if (flexible) {
+                throw std::runtime_error("the dimensions for reshape can only have one ambiguous (-1) element");
+            }
+            else flexible = true;
+
+            else if (newDimensions[i] <= 0) {
+                throw std::runtime_error("the only nonpositive element allowed in new dimensions for reshape is -1");
+            }
+        }
+
+        // do it differently, just pass the flexible dimension as an arg
+    }
+    adjustOutTensorDimensions(newDimensions);
+}
+
+void Reshape::forward( Tensor& inputTensor ) {
+    manageDimensions( inputTensor );
+    setInputTensorPointer( &inputTensor );
+
+    for (size_t i = 0; i < inputTensor.length; i++) {
+        outputTensor.data[i] = inputTensor.data[i];
+    }
+}
+
+void Reshape::backward() {
+
+    for (size_t i = 0; i < currentInputTensor->length; i++) {
+        currentInputTensor->grads[i] += outputTensor.grads[i];
+    }
+
+    setInputTensorPointer(nullptr);
+}
+
+void Reshape::manageDimensions( const Tensor& inputTensor ) {
+    if (inputTensor.length != outputTensor.length) {
+        throw std::runtime_error("reshape can't be done when the length of the input and the output is different");
+    }
+}
+
 
 
 } // namespace mygrad
