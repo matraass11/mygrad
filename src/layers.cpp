@@ -106,7 +106,7 @@ void ReLU::forward( Tensor& inputTensor ) {
     manageDimensions( inputTensor );
     setInputTensorPointer( &inputTensor );
 
-    for (int i = 0; i < currentInputTensor->length; i++) {
+    for (size_t i = 0; i < currentInputTensor->length; i++) {
         outputTensor.data[i] = (currentInputTensor->data[i] >= 0 ? currentInputTensor->data[i] : 0);
     }
 }
@@ -118,7 +118,7 @@ void ReLU::manageDimensions( const Tensor& inputTensor ) {
 }
 
 void ReLU::backward() {
-    for (int i = 0; i < currentInputTensor->length; i++) {
+    for (size_t i = 0; i < currentInputTensor->length; i++) {
         currentInputTensor->grads[i] = (currentInputTensor->data[i] >= 0 ? outputTensor.grads[i] : 0);
     }
 
@@ -151,7 +151,7 @@ dtype Conv2d::convolve(size_t pictureIndex, size_t filterIndex, int inputRow, in
                     inputCol + kernelCol >= currentInputTensor->dimensions[3]) {
                     continue;
                 }
-                
+
                 sum +=  currentInputTensor->at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) * 
                         kernels.at( {filterIndex, inputChannel, kernelRow, kernelCol} );
             }

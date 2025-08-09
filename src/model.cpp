@@ -7,7 +7,7 @@ namespace mygrad {
 
 const std::vector<Tensor*> Model::parametersOfLayers(LayersContainer& layers) {
     std::vector<Tensor*> parameterTensors;
-    for (int i = 0; i < layers.size(); i++) {
+    for (size_t i = 0; i < layers.size(); i++) {
         const std::vector<Tensor*>& parametersOfLayer = layers[i].parameterTensors();
         parameterTensors.insert(parameterTensors.end(), parametersOfLayer.begin(), parametersOfLayer.end());
     }
@@ -16,7 +16,7 @@ const std::vector<Tensor*> Model::parametersOfLayers(LayersContainer& layers) {
 
 const std::vector<Tensor*> Model::nonParametersOfLayers(LayersContainer& layers) {
     std::vector<Tensor*> nonParameterTensors;
-    for (int i = 0; i < layers.size(); i++) {
+    for (size_t i = 0; i < layers.size(); i++) {
         const std::vector<Tensor*>& nonParametersOfLayer = layers[i].nonParameterTensors();
         nonParameterTensors.insert(nonParameterTensors.end(), nonParametersOfLayer.begin(), nonParametersOfLayer.end());
     }
@@ -68,7 +68,7 @@ void Model::zeroGrad() {
 Tensor& Model::forward(Tensor& x) {
 
     layers[0].forward(x);
-    for (int i = 1; i < layers.size(); i++){
+    for (size_t i = 1; i < layers.size(); i++){
         layers[i].forward(layers[i-1].outputTensor);
     }
     return layers[layers.size() - 1].outputTensor;

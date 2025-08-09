@@ -25,9 +25,9 @@ Tensor loadMnistImages(const std::string& path) {
 
     Tensor images = Tensor::zeros({static_cast<size_t>(n_images), static_cast<size_t>(n_rows), static_cast<size_t>(n_cols)});
 
-    for (int i = 0; i < n_images; ++i) {
-        for (int r = 0; r < n_rows; ++r) {
-            for (int c = 0; c < n_cols; ++c) {
+    for (size_t i = 0; i < static_cast<size_t>(n_images); ++i) {
+        for (size_t r = 0; r < static_cast<size_t>(n_rows); ++r) {
+            for (size_t c = 0; c < static_cast<size_t>(n_cols); ++c) {
                 unsigned char pixel = 0;
                 file.read((char*)&pixel, 1);
                 images.at({i, r, c}) = static_cast<dtype>(pixel) / 255.0;
@@ -53,7 +53,7 @@ Tensor loadMnistLabels(const std::string& path) {
 
 
     Tensor labels = Tensor::zeros({static_cast<size_t> (n_labels) }); // Assuming 1D tensor
-    for (int i = 0; i < n_labels; ++i) {
+    for (size_t i = 0; i < static_cast<size_t>(n_labels); ++i) {
         unsigned char label = 0;
         file.read((char*)&label, 1);
         labels.at({i}) = static_cast<float>(label);
@@ -63,24 +63,24 @@ Tensor loadMnistLabels(const std::string& path) {
 }
 
 
-void visualizeImage(const Tensor& images, int index) {
+void visualizeImage(const Tensor& images, size_t index) {
     const int rows = images.dimensions[1];
     const int cols = images.dimensions[2];
 
     const char* grayRamp = " .:-=+*#%@"; // from light to dark
 
-    for (int r = 0; r < rows; ++r) {
-        for (int c = 0; c < cols; ++c) {
+    for (size_t r = 0; r < rows; ++r) {
+        for (size_t c = 0; c < cols; ++c) {
             dtype pixel = images.at({index, r, c});
             pixel = std::max(0.0, std::min(1.0, pixel));
-            int level = static_cast<int>(pixel * (strlen(grayRamp) - 1));
+            size_t level = (pixel * (strlen(grayRamp) - 1));
             std::cout << grayRamp[level];
         }
         std::cout << "\n";
     }
 }
 
-void visualizeImage(const Tensor& images, const Tensor& labels, int index) {
+void visualizeImage(const Tensor& images, const Tensor& labels, size_t index) {
     
     std::cout << "Label: " << static_cast<int>(labels.at({index})) << "\n";
     visualizeImage(images, index);
