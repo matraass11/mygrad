@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <optional>
 #include "tensor.hpp" 
 #include "helper.hpp"
 
@@ -78,7 +79,7 @@ struct Conv2d : Layer {
 
 private:
     dtype convolve(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol) const;
-    void convolveBackward(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol, size_t locInOutput);
+    void convolveBackward(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol, dtype gradPassedDown);
 
     inline void manageDimensions( const Tensor& inputTensor ) override;
 };
@@ -86,9 +87,10 @@ private:
 
 struct Reshape : Layer {
 
-    const std::vector<int> newDimensions;
+    std::vector<size_t> newDimensions;
+    std::optional<size_t> freeDimension;
     
-    Reshape( const std::vector<int>& newDimensions );
+    Reshape( const std::vector<size_t>& newDimensions, std::optional<size_t> freeDimension );
     
     void forward( Tensor& inputTensor ) override;
     void backward() override;
@@ -99,7 +101,6 @@ struct Reshape : Layer {
 private:
 
     inline void manageDimensions( const Tensor& inputTensor ) override;
-    bool flexible;
 };
 
 

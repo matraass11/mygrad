@@ -8,6 +8,9 @@
 #include <numeric>
 #include <execution>
 
+
+#include <cassert>
+
 #include "mygrad/layers.hpp"
 
 namespace mygrad {
@@ -52,7 +55,7 @@ void LinearLayer::backward() {
 }
 
 void LinearLayer::matmulWithBiasBackward() {
-    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible. exiting");
+    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
 
     auto processRow = [&] (size_t rowStart, size_t rowEnd) {
         for (size_t row = rowStart; row < rowEnd; row++){
@@ -149,6 +152,8 @@ void ReLU::manageDimensions( const Tensor& inputTensor ) {
 }
 
 void ReLU::backward() {
+    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+
     for (size_t i = 0; i < currentInputTensor->length; i++) {
         currentInputTensor->grads[i] = (currentInputTensor->data[i] >= 0 ? outputTensor.grads[i] : 0);
     }
@@ -169,9 +174,8 @@ void Conv2d::print() {
 }
 
 
-dtype Conv2d::convolve(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol) const {
-    // filter = kernels[filterIndex]
-    dtype sum = 0;
+dtype Conv2d::convolve(size_t pictureIndex, size_t outChannel, int inputRow, int inputCol) const {
+    dtype sum = biases.data[outChannel];
 
     for (size_t inputChannel = 0; inputChannel < inChannels; inputChannel++) {
         for (size_t kernelRow = 0; kernelRow < kernelSize; kernelRow++) {
@@ -184,7 +188,7 @@ dtype Conv2d::convolve(size_t pictureIndex, size_t filterIndex, int inputRow, in
                 }
 
                 sum +=  currentInputTensor->at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) * 
-                        kernels.at( {filterIndex, inputChannel, kernelRow, kernelCol} );
+                        kernels.at( {outChannel, inputChannel, kernelRow, kernelCol} );
             }
         }
     }
@@ -214,9 +218,9 @@ void Conv2d::forward(Tensor& inputTensor) {
     }
 }
 
-void Conv2d::convolveBackward(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol, size_t locInOutput) {
-    // filter = kernels[filterIndex]
-    dtype sum = 0;
+void Conv2d::convolveBackward(size_t pictureIndex, size_t outChannel, int inputRow, int inputCol, dtype gradPassedDown) {
+
+    biases.gradAt( {outChannel} ) += gradPassedDown;
 
     for (size_t inputChannel = 0; inputChannel < inChannels; inputChannel++) {
         for (size_t kernelRow = 0; kernelRow < kernelSize; kernelRow++) {
@@ -228,12 +232,10 @@ void Conv2d::convolveBackward(size_t pictureIndex, size_t filterIndex, int input
                     continue;
                 }
 
-                dtype gradPassedDown = outputTensor.grads[locInOutput];
-
                 currentInputTensor->gradAt( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) += 
-                    kernels.at( {filterIndex, inputChannel, kernelRow, kernelCol} ) * gradPassedDown;
+                    kernels.at( {outChannel, inputChannel, kernelRow, kernelCol} ) * gradPassedDown;
 
-                kernels.gradAt( {filterIndex, inputChannel, kernelRow, kernelCol} ) += gradPassedDown * 
+                kernels.gradAt( {outChannel, inputChannel, kernelRow, kernelCol} ) += gradPassedDown * 
                     currentInputTensor->at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ); 
             }
         }
@@ -241,6 +243,8 @@ void Conv2d::convolveBackward(size_t pictureIndex, size_t filterIndex, int input
 }
 
 void Conv2d::backward() {
+    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+
     size_t locInOutput = 0;
 
     for (size_t picture = 0; picture < currentInputTensor->dimensions[0]; picture++) {
@@ -248,9 +252,9 @@ void Conv2d::backward() {
             for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(currentInputTensor->dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
 
                 for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(currentInputTensor->dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
-                
-                    outputTensor.data[locInOutput] = convolve(picture, channelOut, row, column);
-                    // std::cout << outputTensor.data[locInOutput] << ", ";
+
+                    dtype gradPassedDown = outputTensor.grads[locInOutput];
+                    convolveBackward(picture, channelOut, row, column, gradPassedDown);
                     locInOutput++;
                 }
             }
@@ -275,26 +279,15 @@ void Conv2d::manageDimensions( const Tensor& inputTensor ) {
     if (outputTensor.dimensions != neededOutTensorDims) {
         adjustOutTensorDimensions(neededOutTensorDims);
     }
+
+    // std::cout << "output of conv dimensions: " << outputTensor.dimensions << "output of conv length: " << outputTensor.length << "\n";
 }
 
 
-Reshape::Reshape( const std::vector<int>& newDimensions ) : newDimensions(newDimensions), flexible(false) {
-    for (size_t i = 0; i < newDimensions.size(); i++) {
-        if (newDimensions[i] == -1) {
-            if (flexible) {
-                throw std::runtime_error("the dimensions for reshape can only have one ambiguous (-1) element");
-            }
-            else flexible = true;
+Reshape::Reshape( const std::vector<size_t>& newDimensions, std::optional<size_t> freeDimension ) : 
+    newDimensions(newDimensions), freeDimension(freeDimension)
+    { adjustOutTensorDimensions(newDimensions); }
 
-            else if (newDimensions[i] <= 0) {
-                throw std::runtime_error("the only nonpositive element allowed in new dimensions for reshape is -1");
-            }
-        }
-
-        // do it differently, just pass the flexible dimension as an arg
-    }
-    adjustOutTensorDimensions(newDimensions);
-}
 
 void Reshape::forward( Tensor& inputTensor ) {
     manageDimensions( inputTensor );
@@ -316,7 +309,28 @@ void Reshape::backward() {
 
 void Reshape::manageDimensions( const Tensor& inputTensor ) {
     if (inputTensor.length != outputTensor.length) {
-        throw std::runtime_error("reshape can't be done when the length of the input and the output is different");
+        if (freeDimension.has_value()) {
+            size_t outLengthWithoutFreeDim = 1;
+            for (size_t i = 0; i < newDimensions.size(); i++) {
+                if (i != freeDimension) {
+                    outLengthWithoutFreeDim *= newDimensions[i];
+                }
+            }
+            if (inputTensor.length % outLengthWithoutFreeDim != 0) throw std::runtime_error("dimensions for reshape with free dimension are invalid");
+
+            newDimensions[freeDimension.value()] = inputTensor.length / outLengthWithoutFreeDim;
+
+
+            // std::cout << "new dims: " << newDimensions;
+            // std::cout << "input dims: " << inputTensor.dimensions;
+
+            outputTensor = Tensor::zeros(newDimensions);
+
+            assert(inputTensor.length == outputTensor.length);
+
+        }   
+
+        else throw std::runtime_error("reshape can't be done when the length of the input and the output is different");
     }
 }
 

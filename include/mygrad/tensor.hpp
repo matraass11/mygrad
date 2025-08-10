@@ -52,6 +52,7 @@ public:
     }
 
     inline void zeroGrad() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
+    inline void zeroData() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
 
 
     static TensorStrides stridesFromDimensions(const TensorDims& dimensions);
