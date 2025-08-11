@@ -1,6 +1,5 @@
 #include <iostream>
 #include <array>
-#include <fstream>
 #include <filesystem>
 
 #include "mygrad/mygrad.hpp"

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <format>
 #include <cmath>
+#include <climits>
 #include <algorithm>
 #include <stdexcept>
 #include "mygrad/tensor.hpp"

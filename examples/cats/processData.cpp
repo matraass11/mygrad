@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <string>
 #include <future>
+#include <cmath>
 // #include <thread>
 
 #include "processData.hpp"
@@ -94,11 +95,11 @@ static Tensor tensorWithImageData(std::vector<size_t> indices) {
     };
 
     const size_t threads_n = std::thread::hardware_concurrency();
-    const size_t chunkSize = (indices.size() / threads_n) + 1;
+    const size_t chunkSize = std::ceil(indices.size() / threads_n);
     std::vector<std::future<void>> futures(threads_n);
     for (int thread = 0; thread < threads_n; thread++) {
         const size_t start = chunkSize * thread, end = std::min(start+chunkSize, indices.size()); 
-        futures[thread] = std::async(worker, start, end);
+        futures[thread] = std::async(std::launch::async, worker, start, end);
     }
 
     for (auto& future: futures) future.get();

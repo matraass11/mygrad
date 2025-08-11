@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <cstring>
+#include <vector>
 
 #include "types.hpp"
 

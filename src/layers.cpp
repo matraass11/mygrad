@@ -1,5 +1,9 @@
 #include <iostream>
 #include <stdexcept>
+#include <cmath>
+
+#include <future>
+#include <thread>
 
 #include "mygrad/layers.hpp"
 
@@ -44,26 +48,35 @@ void LinearLayer::backward() {
 }
 
 void LinearLayer::matmulWithBiasBackward() {
-    if (!(currentInputTensor)) { 
-        std::cerr << "backward before forward impossible. exiting\n";
-        exit(1);
-    }
+    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible. exiting");
 
-    for (size_t row=0; row < outputTensor.dimensions[0]; row++) {
-        for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
-            dtype currentGradPassedDown = outputTensor.gradAt({row, column});
-            
-            for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
-                currentInputTensor->gradAt({row, dotProductIterator}) +=
-                    weights.at({dotProductIterator, column}) * currentGradPassedDown;
+    auto processRow = [&] (size_t rowStart, size_t rowEnd) {
+        for (size_t row = rowStart; row < rowEnd; row++){
+            for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
+                dtype currentGradPassedDown = outputTensor.gradAt({row, column});
+                
+                for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
+                    currentInputTensor->gradAt({row, dotProductIterator}) +=
+                        weights.at({dotProductIterator, column}) * currentGradPassedDown;
 
-                weights.gradAt({dotProductIterator, column}) += 
-                    currentInputTensor->at({row, dotProductIterator}) * currentGradPassedDown; 
-                }
+                    weights.gradAt({dotProductIterator, column}) += 
+                        currentInputTensor->at({row, dotProductIterator}) * currentGradPassedDown; 
+                    }
 
-            biases.gradAt({0, column}) += currentGradPassedDown;
+                biases.gradAt({0, column}) += currentGradPassedDown;
+            }
         }
+    };
+
+    const size_t threads_n = std::thread::hardware_concurrency();
+    std::vector<std::future<void>> futures(threads_n);
+    const size_t chunkSize = std::ceil(outputTensor.dimensions[0] / threads_n);
+    for (size_t t=0; t < futures.size(); t++) {
+        size_t start = chunkSize * t, end = std::min(start+chunkSize, outputTensor.dimensions[0]); 
+        futures[t] = std::async(std::launch::async, processRow, start, end);
     }
+
+    for (auto& future: futures) future.get();
 }
 
 void LinearLayer::manageDimensions(const Tensor& inputTensor) {
