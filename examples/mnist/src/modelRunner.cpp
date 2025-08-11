@@ -83,6 +83,12 @@ static dtype train(Model& model, Tensor& data, Tensor& labels, CrossEntropyLoss&
         optim.step();
         model.zeroGrad();
 
+
+        // FOR SPEEDUP TESTING 
+        if (batch == 25) {
+            break;
+        }
+
     }
     avgLoss /= (labels.length / batchSize);
     return avgLoss;

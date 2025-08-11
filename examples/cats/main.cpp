@@ -10,9 +10,6 @@
 int main() {
     // Dataset catsData = loadCatImages(0.8, 0.1, 0.1);
 
-    const size_t a = 8, b = 7;
-    const size_t c = (a / b);
-
     Conv2d c(2, 4, 3, 1, 1); // 2 in channels, 4 out channels, 3 kernel size, 1 stride, s1 padding size
     Tensor t(std::vector(18, 2.),
 
