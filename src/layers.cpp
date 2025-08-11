@@ -103,16 +103,29 @@ void LinearLayer::manageDimensions(const Tensor& inputTensor) {
 
 void LinearLayer::matmulWithBias() {
 
-    for (size_t row=0; row < outputTensor.dimensions[0]; row++) {
-        for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
-            dtype& currentElement = outputTensor.at({row, column}) = biases.at({0, column});
+    auto processRow = [&](size_t startRow, size_t endRow) {
+        for (size_t row=startRow; row < endRow; row++) {
+            for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
+                dtype& currentElement = outputTensor.at({row, column}) = biases.at({0, column});
 
-            for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
-                currentElement +=
-                    currentInputTensor->at({row, dotProductIterator}) * weights.at({dotProductIterator, column});
+                for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
+                    currentElement +=
+                        currentInputTensor->at({row, dotProductIterator}) * weights.at({dotProductIterator, column});
+                }
             }
         }
+    };
+
+    const size_t threads_n = std::thread::hardware_concurrency();
+    std::vector<std::future<void>> futures(threads_n);
+    const size_t chunkSize = std::ceil(outputTensor.dimensions[0] / threads_n);
+    for (size_t t=0; t < futures.size(); t++) {
+        size_t start = chunkSize * t, end = std::min(start+chunkSize, outputTensor.dimensions[0]); 
+        futures[t] = std::async(std::launch::async, processRow, start, end);
     }
+
+    for (auto& future: futures) future.get();
+
 }
 
 void ReLU::forward( Tensor& inputTensor ) {
