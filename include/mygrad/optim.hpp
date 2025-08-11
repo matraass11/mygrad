@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <cmath>
 
 #include "tensor.hpp"
 #include "model.hpp"
