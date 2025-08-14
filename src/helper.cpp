@@ -16,7 +16,7 @@ static std::mt19937 generator(dev());
 std::vector<dtype> normDistVector(size_t length, dtype standardDeviation = 1) {
     std::normal_distribution<double> normDist{0, standardDeviation};
     std::vector<dtype> v(length);
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         v[i] = normDist(generator);
     }
 
@@ -35,7 +35,7 @@ Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>
     batchDimensions[0] = indices.size();
     Tensor batchTensor = Tensor::zeros(batchDimensions);
     const size_t subTensorSize = dataTensor.strides[0];
-    for (int i=0; i < indices.size(); i++) {
+    for (size_t i=0; i < indices.size(); i++) {
         std::memcpy(batchTensor.data.get() + i*subTensorSize,
                     dataTensor.data.get() + indices[i]*subTensorSize, 
                     subTensorSize*sizeof(dtype));
@@ -46,7 +46,7 @@ Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>
 Tensor retrieveBatchFromLabels(const Tensor& labelsTensor, const std::vector<size_t>& indices) {
     
     Tensor batchTensor = Tensor::zeros( {indices.size() } );
-    for (int i=0; i < indices.size(); i++) {
+    for (size_t i=0; i < indices.size(); i++) {
         batchTensor.data[i] = labelsTensor.data[indices[i]];
     }
     return batchTensor;
@@ -56,7 +56,7 @@ Tensor standartize(const Tensor& tensor) {
     dtype mean = tensor.mean(), std = tensor.std();
 
     Tensor standartizedTensor = Tensor::zeros( tensor.dimensions );
-    for (int i = 0; i < tensor.length; i++ ) {
+    for (size_t i = 0; i < tensor.length; i++ ) {
         standartizedTensor.data[i] = (tensor.data[i] - mean) / std;
     }
     return standartizedTensor;
