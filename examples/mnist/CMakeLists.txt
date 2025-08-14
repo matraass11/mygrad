@@ -8,6 +8,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS -march=native)
 
 # Find mygrad from the source tree
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../ mygrad_build EXCLUDE_FROM_ALL)
