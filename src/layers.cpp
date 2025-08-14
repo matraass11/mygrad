@@ -5,6 +5,9 @@
 #include <future>
 #include <thread>
 
+#include <numeric>
+#include <execution>
+
 #include "mygrad/layers.hpp"
 
 namespace mygrad {
@@ -107,12 +110,13 @@ void LinearLayer::matmulWithBias() {
     auto processRow = [&](size_t startRow, size_t endRow) {
         for (size_t inputRow=startRow; inputRow < endRow; inputRow++) {
             for (size_t weightRow=0; weightRow < outputTensor.dimensions[1]; weightRow++) {
-                dtype& currentElement = outputTensor.at({inputRow, weightRow}) = biases.at({0, weightRow});
-
-                for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
-                    currentElement +=
-                        currentInputTensor->at({inputRow, dotProductIterator}) * weights.at({weightRow, dotProductIterator}); // weights are transposed
-                }
+                outputTensor.at({inputRow, weightRow}) = std::transform_reduce(
+                    std::execution::par_unseq, 
+                    &currentInputTensor->at({inputRow, 0}), 
+                    &currentInputTensor->at({inputRow, currentInputTensor->dimensions[1] - 1}),
+                    &weights.at({weightRow, 0}),
+                    biases.at({0, weightRow})
+                ); // dot product
             }
         }
     };
