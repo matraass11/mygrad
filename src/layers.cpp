@@ -25,12 +25,13 @@ void Layer::adjustOutTensorDimensions( const std::vector<size_t>& newDimensions 
 
 
 LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures,
-                          const std::vector<dtype>& data ) : //this is for testing
-    weights( data, { inFeatures, outFeatures } ), 
+                          const std::vector<dtype>& data ) :
+    weights( data, { outFeatures, inFeatures } ), // the tensor is transposed for matrix multiplication to work nicely.
+                                                 // each outFeatures row has InFeatures weights. 
     biases( std::vector<dtype>(outFeatures, 0), {1, outFeatures} ) {}
     
 
-LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures) : //default init
+LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures) : // default init
     LinearLayer( inFeatures, outFeatures,
                  KaimingWeightsVector(inFeatures, outFeatures) ) {}
 
@@ -57,9 +58,9 @@ void LinearLayer::matmulWithBiasBackward() {
                 
                 for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
                     currentInputTensor->gradAt({row, dotProductIterator}) +=
-                        weights.at({dotProductIterator, column}) * currentGradPassedDown;
+                        weights.at({column, dotProductIterator}) * currentGradPassedDown;
 
-                    weights.gradAt({dotProductIterator, column}) += 
+                    weights.gradAt({column, dotProductIterator}) += 
                         currentInputTensor->at({row, dotProductIterator}) * currentGradPassedDown; 
                     }
 
@@ -88,29 +89,29 @@ void LinearLayer::manageDimensions(const Tensor& inputTensor) {
     }
 
     if (
-        inputTensor.dimensions[1] != weights.dimensions[0]
+        inputTensor.dimensions[1] != weights.dimensions[1]
     ) {
-        std::cout << inputTensor.dimensions[1] << " != " << weights.dimensions[0] << "\n";
+        std::cout << inputTensor.dimensions[1] << " != " << weights.dimensions[1] << "\n";
         throw std::runtime_error("input tensor columns don't match weight tensor rows in linear layer. mismatch printed above");
     }
 
     if (
-        inputTensor.dimensions[0] != outputTensor.dimensions[0] or weights.dimensions[1] != outputTensor.dimensions[1]
+        inputTensor.dimensions[0] != outputTensor.dimensions[0] or weights.dimensions[0] != outputTensor.dimensions[1]
     ) {
-        adjustOutTensorDimensions( {inputTensor.dimensions[0], weights.dimensions[1]} );
+        adjustOutTensorDimensions( {inputTensor.dimensions[0], weights.dimensions[0]} );
     }
 }
 
 void LinearLayer::matmulWithBias() {
 
     auto processRow = [&](size_t startRow, size_t endRow) {
-        for (size_t row=startRow; row < endRow; row++) {
-            for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
-                dtype& currentElement = outputTensor.at({row, column}) = biases.at({0, column});
+        for (size_t inputRow=startRow; inputRow < endRow; inputRow++) {
+            for (size_t weightRow=0; weightRow < outputTensor.dimensions[1]; weightRow++) {
+                dtype& currentElement = outputTensor.at({inputRow, weightRow}) = biases.at({0, weightRow});
 
                 for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
                     currentElement +=
-                        currentInputTensor->at({row, dotProductIterator}) * weights.at({dotProductIterator, column});
+                        currentInputTensor->at({inputRow, dotProductIterator}) * weights.at({weightRow, dotProductIterator}); // weights are transposed
                 }
             }
         }
