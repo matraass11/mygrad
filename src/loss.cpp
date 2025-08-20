@@ -7,7 +7,7 @@
 
 namespace mygrad {
 
-static const std::vector<size_t> defaultDimensions = {64, 10};
+static const TensorDims defaultDimensions = {64, 10};
 // we have to initialize the intermediate tensor with some dimensions, so we pick some arbitrary ones.
 // when needed, the dimensions are adjusted
 

@@ -31,7 +31,7 @@ std::vector<dtype> KaimingWeightsVector(size_t inFeatures, size_t outFeatures) {
 
 Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>& indices) {
 
-    std::vector<size_t> batchDimensions = dataTensor.dimensions;
+    TensorDims batchDimensions = dataTensor.dimensions;
     batchDimensions[0] = indices.size();
     Tensor batchTensor = Tensor::zeros(batchDimensions);
     const size_t subTensorSize = dataTensor.strides[0];
