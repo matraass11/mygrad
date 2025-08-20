@@ -7,3 +7,4 @@
 #include "mygrad/optim.hpp"
 #include "mygrad/tensor.hpp"
 #include "mygrad/types.hpp"
+#include "mygrad/smallArray.hpp"

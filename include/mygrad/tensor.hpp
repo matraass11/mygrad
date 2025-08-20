@@ -3,42 +3,47 @@
 #include <memory>
 #include <cstring>
 #include <vector>
-
+#include "smallArray.hpp"
 #include "types.hpp"
+
+constexpr size_t MAX_TENSOR_DIMENSIONALITY = 10;
+using TensorDims = SmallArray<size_t, MAX_TENSOR_DIMENSIONALITY>;
+using TensorIndices = TensorDims;
+using TensorStrides = SmallArray<int, MAX_TENSOR_DIMENSIONALITY>;
 
 namespace mygrad {
 
 struct Tensor {
     size_t length;
     
-    std::vector<size_t> dimensions;
-    std::vector<int> strides;
+    TensorDims dimensions;
+    TensorStrides strides;
     std::unique_ptr<dtype[]> data;
     std::unique_ptr<dtype[]> grads;
 
     Tensor( const std::vector<dtype>& dataVector,
-            const std::vector<size_t>& dimensions );
+            const TensorDims& dimensions );
 
 private:
-    Tensor( const std::vector<size_t>& dimensions );
+    Tensor( const TensorDims& dimensions );
 public:
 
-    static Tensor zeros( const std::vector<size_t>& dimensions );
+    static Tensor zeros( const TensorDims& dimensions );
 
     void print() const;
     void printGrad() const;
 
 
-    inline dtype& at(const std::vector<size_t>& indices)          { return data[indicesToLocationIn1dArray(indices)]; }
+    inline dtype& at(const TensorDims& indices)          { return data[indicesToLocationIn1dArray(indices)]; }
 
-    inline dtype at(const std::vector<size_t>& indices)     const { return data[indicesToLocationIn1dArray(indices)]; }
+    inline dtype at(const TensorDims& indices)     const { return data[indicesToLocationIn1dArray(indices)]; }
 
-    inline dtype& gradAt(const std::vector<size_t>& indices)      { return grads[indicesToLocationIn1dArray(indices)]; }
+    inline dtype& gradAt(const TensorDims& indices)      { return grads[indicesToLocationIn1dArray(indices)]; }
 
-    inline dtype gradAt(const std::vector<size_t>& indices) const { return grads[indicesToLocationIn1dArray(indices)]; }
+    inline dtype gradAt(const TensorDims& indices) const { return grads[indicesToLocationIn1dArray(indices)]; }
 
 
-    inline void reshape(const std::vector<size_t>& newDimensions) {
+    inline void reshape(const TensorDims& newDimensions) {
         if (lengthFromDimensions(newDimensions) != length) 
             throw std::runtime_error("tensor reshaped into dimensions with length different from the current one");
         dimensions = newDimensions;
@@ -48,10 +53,10 @@ public:
     inline void zeroGrad() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
 
 
-    static std::vector<int> stridesFromDimensions(const std::vector<size_t>& dimensions);
-    static size_t lengthFromDimensions(const std::vector<size_t>& dimensions);
-    size_t indicesToLocationIn1dArray(const std::vector<size_t>& indices) const;
-    std::vector<size_t> locationIn1dArrayToIndices(size_t location) const;
+    static TensorStrides stridesFromDimensions(const TensorDims& dimensions);
+    static size_t lengthFromDimensions(const TensorDims& dimensions);
+    size_t indicesToLocationIn1dArray(const TensorDims& indices) const;
+    TensorDims locationIn1dArrayToIndices(size_t location) const;
 
     Tensor operator+( const Tensor& other ) const;
     Tensor operator-( const Tensor& other ) const;
