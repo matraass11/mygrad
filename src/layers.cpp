@@ -123,7 +123,7 @@ void LinearLayer::matmulWithBias() {
 
     const size_t threads_n = std::thread::hardware_concurrency();
     std::vector<std::future<void>> futures(threads_n);
-    const size_t chunkSize = std::ceil(outputTensor.dimensions[0] / threads_n);
+    const size_t chunkSize = std::ceil( (double) outputTensor.dimensions[0] / threads_n);
     for (size_t t=0; t < futures.size(); t++) {
         size_t start = chunkSize * t, end = std::min(start+chunkSize, outputTensor.dimensions[0]); 
         futures[t] = std::async(std::launch::async, processRow, start, end);
