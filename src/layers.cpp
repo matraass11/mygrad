@@ -12,7 +12,7 @@
 
 namespace mygrad {
 
-static const std::vector<size_t> defaultDimensions = {32, 100}; 
+static const TensorDims defaultDimensions = {32, 100}; 
 // we have to initialize the output tensor with some dimensions, so we pick some arbitrary ones.
 // when needed, the dimensions are adjusted
 
@@ -22,7 +22,7 @@ void Layer::setInputTensorPointer( Tensor* inputTensor) {
     this->currentInputTensor = inputTensor;
 }
 
-void Layer::adjustOutTensorDimensions( const std::vector<size_t>& newDimensions ) {
+void Layer::adjustOutTensorDimensions( const TensorDims& newDimensions ) {
     outputTensor = Tensor::zeros( newDimensions );
 }
 
@@ -226,7 +226,7 @@ void Conv2d::manageDimensions( const Tensor& inputTensor ) {
         return (size + 2*paddingSize - kernelSize)/stride + 1;
     };
 
-    std::vector<size_t> neededOutTensorDims = { inputTensor.dimensions[0],
+    TensorDims neededOutTensorDims = { inputTensor.dimensions[0],
                                                 outChannels,
                                                 convolvedSize(inputTensor.dimensions[2]),
                                                 convolvedSize(inputTensor.dimensions[3]) };

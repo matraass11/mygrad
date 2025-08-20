@@ -6,12 +6,13 @@
 #include "smallArray.hpp"
 #include "types.hpp"
 
+
+namespace mygrad {
+
 constexpr size_t MAX_TENSOR_DIMENSIONALITY = 10;
 using TensorDims = SmallArray<size_t, MAX_TENSOR_DIMENSIONALITY>;
 using TensorIndices = TensorDims;
 using TensorStrides = SmallArray<int, MAX_TENSOR_DIMENSIONALITY>;
-
-namespace mygrad {
 
 struct Tensor {
     size_t length;

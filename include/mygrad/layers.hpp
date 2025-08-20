@@ -23,7 +23,7 @@ struct Layer {
 protected:
     inline void setInputTensorPointer( Tensor* inputTensor ); // relies on the input tensor not changing
     virtual void manageDimensions( const Tensor& inputTensor ) = 0; 
-    inline void adjustOutTensorDimensions( const std::vector<size_t>& newDimensions );
+    inline void adjustOutTensorDimensions( const TensorDims& newDimensions );
 };
 
 

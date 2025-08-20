@@ -11,7 +11,7 @@
 
 namespace mygrad {
 
-Tensor::Tensor( const std::vector<size_t>& dimensions )
+Tensor::Tensor( const TensorDims& dimensions )
 try:
     length(lengthFromDimensions(dimensions)),
     dimensions(dimensions),
@@ -26,7 +26,7 @@ catch (const std::bad_alloc& e) {
 
 
 Tensor::Tensor( const std::vector<dtype>& dataVector,
-                const std::vector<size_t>& dimensions ) : 
+                const TensorDims& dimensions ) : 
                 
     Tensor(dimensions) 
 
@@ -39,7 +39,7 @@ Tensor::Tensor( const std::vector<dtype>& dataVector,
         }
     }
 
-Tensor Tensor::zeros( const std::vector<size_t>& dimensions ) {
+Tensor Tensor::zeros( const TensorDims& dimensions ) {
     return Tensor(dimensions);
 }
 
@@ -64,7 +64,7 @@ void Tensor::printGrad() const {
     std::cout << "\n\n";
 }
 
-size_t Tensor::lengthFromDimensions(const std::vector<size_t>& dimensions) {
+size_t Tensor::lengthFromDimensions(const TensorDims& dimensions) {
     size_t length = 1;
     for (size_t i=0; i<dimensions.size(); i++){
         length *= dimensions[i];
@@ -72,8 +72,8 @@ size_t Tensor::lengthFromDimensions(const std::vector<size_t>& dimensions) {
     return length;
 }
 
-std::vector<int> Tensor::stridesFromDimensions(const std::vector<size_t>& dimensions) {
-    std::vector<int> strides(dimensions.size());
+TensorStrides Tensor::stridesFromDimensions(const TensorDims& dimensions) {
+    TensorStrides strides(dimensions.size());
     int currentStride = 1;
     for (int i = strides.size()-1; i >= 0; i--) {
         strides[i] = currentStride;
@@ -82,7 +82,7 @@ std::vector<int> Tensor::stridesFromDimensions(const std::vector<size_t>& dimens
     return strides;
 }
 
-size_t Tensor::indicesToLocationIn1dArray(const std::vector<size_t>& indices) const {
+size_t Tensor::indicesToLocationIn1dArray(const TensorDims& indices) const {
     if (indices.size() != dimensions.size()){
         throw std::runtime_error("invalid size of indices to convert to location in 1d");
     }  
@@ -97,13 +97,13 @@ size_t Tensor::indicesToLocationIn1dArray(const std::vector<size_t>& indices) co
     return locationOfElementInDataArray;
 }
 
-std::vector<size_t> Tensor::locationIn1dArrayToIndices(size_t location) const {
+TensorDims Tensor::locationIn1dArrayToIndices(size_t location) const {
     if (location < 0 or location >= length) {
         std::cerr << location << " - location\n";
         throw std::runtime_error("location to be converted to indices is out of range");
     }
 
-    std::vector<size_t> indices(dimensions.size());
+    TensorDims indices(dimensions.size());
     for (size_t i = 0; i < indices.size() ; i++) {
         indices[i] = location / strides[i];
         location -= indices[i] * strides[i];
@@ -225,7 +225,7 @@ Tensor Tensor::max(int dim) const {
     }
     checkValidityOfDimension( dim );
 
-    std::vector<size_t> dimsOfMaxTensor = dimensions;
+    TensorDims dimsOfMaxTensor = dimensions;
     dimsOfMaxTensor[dim] = 1;
     Tensor maxTensor( std::vector<dtype>(lengthFromDimensions(dimsOfMaxTensor), INT_MIN), dimsOfMaxTensor );
 
@@ -248,7 +248,7 @@ Tensor Tensor::sum(int dim) const {
     }
     checkValidityOfDimension( dim );
 
-    std::vector<size_t> dimsOfSumTensor = dimensions;
+    TensorDims dimsOfSumTensor = dimensions;
     dimsOfSumTensor[dim] = 1;
     Tensor sumTensor( zeros(dimsOfSumTensor) );
 
@@ -269,7 +269,7 @@ Tensor Tensor::argmax(int dim) const {
     }
     checkValidityOfDimension( dim );
 
-    std::vector<size_t> dimsOfArgmaxTensor = dimensions;
+    TensorDims dimsOfArgmaxTensor = dimensions;
     dimsOfArgmaxTensor[dim] = 1;
     Tensor argmaxTensor( std::vector<dtype>(length/dimensions[dim], INT_MIN), dimsOfArgmaxTensor );
 
@@ -278,7 +278,7 @@ Tensor Tensor::argmax(int dim) const {
     size_t locInArgmax;
     for (size_t i = 0; i < length; i++) {
         locInArgmax = i % offsetBetweenElementsOfThisDim + (i / totalSizeOfThisDim) * offsetBetweenElementsOfThisDim;
-        std::vector<size_t> currentMaxIndices = locationIn1dArrayToIndices(i);
+        TensorDims currentMaxIndices = locationIn1dArrayToIndices(i);
         currentMaxIndices[dim] = argmaxTensor.data[locInArgmax];
         if (argmaxTensor.data[locInArgmax] == INT_MIN or this->data[i] > this->at(currentMaxIndices)) {
             argmaxTensor.data[locInArgmax] = locationIn1dArrayToIndices(i)[dim];

@@ -59,7 +59,7 @@ void convertTensorToPng(const Tensor& imgTensor, size_t index, const std::string
 }
 
 
-static Tensor tensorWithImageData(std::vector<size_t> indices) {
+static Tensor tensorWithImageData(TensorIndices indices) {
     const size_t expectedSize = 64, expectedChannels = 3;
     Tensor dataTensor = Tensor::zeros( {indices.size(), expectedChannels, expectedSize, expectedSize});
 
@@ -121,7 +121,7 @@ Dataset loadCatImages(float trainSplit, float evalSplit, float testSplit) {
         throw std::runtime_error("train+eval+test must equal one. equals: " + std::to_string(trainSplit + evalSplit + testSplit));
     }
 
-    std::vector<size_t> indices = shuffledIndices(length);
+    TensorIndices indices = shuffledIndices(length);
     
     return Dataset ( 
         tensorWithImageData(slicedIndices(indices, 0, trainBoundary - 1)),  
