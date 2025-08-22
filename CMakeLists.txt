@@ -13,6 +13,7 @@ add_library(mygrad STATIC
     src/model.cpp
     src/optim.cpp
     src/tensor.cpp
+    src/threadPool.cpp
 )
 
 target_include_directories(mygrad PUBLIC
