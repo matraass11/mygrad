@@ -65,22 +65,25 @@ void LinearLayer::matmulWithBiasBackward() {
         ThreadPool::push(
 
             [this, startRow, endRow] () {
-            for (size_t row = startRow; row < endRow; row++){
-                for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
-                    dtype currentGradPassedDown = outputTensor.gradAt({row, column});
-                    
-                    for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
-                        currentInputTensor->gradAt({row, dotProductIterator}) +=
-                            weights.at({column, dotProductIterator}) * currentGradPassedDown;
+                const size_t inpTensorColumns = currentInputTensor->dimensions[1];
+                const size_t weightColumns = weights.dimensions[1];
 
-                        weights.gradAt({column, dotProductIterator}) += 
-                            currentInputTensor->at({row, dotProductIterator}) * currentGradPassedDown; 
-                        }
+                for (size_t row = startRow; row < endRow; row++){
+                    for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
+                        dtype currentGradPassedDown = outputTensor.gradAt({row, column});
+                        for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
+                            
+                            currentInputTensor->grads[row*inpTensorColumns + dotProductIterator] +=
+                                weights.data[column*weightColumns + dotProductIterator] * currentGradPassedDown;
 
-                    biases.gradAt({0, column}) += currentGradPassedDown;
+                            weights.grads[column*weightColumns + dotProductIterator] += 
+                                currentInputTensor->data[row*inpTensorColumns + dotProductIterator] * currentGradPassedDown; 
+                            }
+
+                        biases.grads[column] += currentGradPassedDown;
+                    }
                 }
-            }
-        });
+            });
     }
 
     ThreadPool::waitUntilDone();
