@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include "mygrad/optim.hpp"
+#include "mygrad/threadPool.hpp"
 
 namespace mygrad {
 
@@ -20,6 +21,13 @@ Adam::Adam(const std::vector<Tensor*>& parameters, dtype learningRate,
 
 void Adam::step() {
     stepsMade++;
+
+    // const size_t threads_n = ThreadPool::size();
+    // const size_t chunkSize = std::ceil(paramsAndGrads.size() / (double) threads_n);
+    // for (size_t t=0; t < threads_n; t++) {
+    //     size_t start = chunkSize * t, end = std::min(start+chunkSize, outputTensor.dimensions[0]); 
+    //     ThreadPool::push([]
+
     for (size_t i = 0; i < paramsAndGrads.size(); i++) {
         dtype& data = paramsAndGrads[i].data, &grad = paramsAndGrads[i].grad;
         dtype& gradRunAvg = paramsAndGrads[i].gradRunAvg, &gradSqRunAvg = paramsAndGrads[i].gradSqRunAvg;
