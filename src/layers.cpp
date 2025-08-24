@@ -72,7 +72,7 @@ void LinearLayer::matmulWithBiasBackward() {
     for (size_t t=0; t < threads_n; t++) {
         size_t startRow = chunkSize * t, endRow = std::min(startRow+chunkSize, outputTensor.dimensions[0]); 
         ThreadPool::push(
-
+            
             [this, startRow, endRow] () {
                 const size_t inpTensorColumns = currentInputTensor->dimensions[1];
                 const size_t weightColumns = weights.dimensions[1];
