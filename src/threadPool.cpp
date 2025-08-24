@@ -68,9 +68,5 @@ void ThreadPool::waitUntilDone() {
     });
 }
 
-// void ThreadPool::waitUntilFinished() {
-
-// }
-
 } // namespace mygrad
 
