@@ -58,19 +58,22 @@ void LinearLayer::matmulWithBiasBackward() {
     if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
 
     auto processRow = [&] (size_t rowStart, size_t rowEnd) {
+        const size_t inpTensorColumns = currentInputTensor->dimensions[1];
+        const size_t weightColumns = weights.dimensions[1];
+
         for (size_t row = rowStart; row < rowEnd; row++){
             for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
                 dtype currentGradPassedDown = outputTensor.gradAt({row, column});
-                
                 for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
-                    currentInputTensor->gradAt({row, dotProductIterator}) +=
-                        weights.at({column, dotProductIterator}) * currentGradPassedDown;
+                    
+                    currentInputTensor->grads[row*inpTensorColumns + dotProductIterator] +=
+                        weights.data[column*weightColumns + dotProductIterator] * currentGradPassedDown;
 
-                    weights.gradAt({column, dotProductIterator}) += 
-                        currentInputTensor->at({row, dotProductIterator}) * currentGradPassedDown; 
+                    weights.grads[column*weightColumns + dotProductIterator] += 
+                        currentInputTensor->data[row*inpTensorColumns + dotProductIterator] * currentGradPassedDown; 
                     }
 
-                biases.gradAt({0, column}) += currentGradPassedDown;
+                biases.grads[column] += currentGradPassedDown;
             }
         }
     };
