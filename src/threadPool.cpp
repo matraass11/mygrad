@@ -11,7 +11,6 @@ ThreadPool::ThreadPool() :
     jobs(), jobsMutex(), jobsAvailable(), jobsRemaining(0) {
         const size_t poolSize = std::thread::hardware_concurrency() ? std::thread::hardware_concurrency() : DEFAULT_POOL_SIZE;
         threads.reserve(poolSize);
-        std::cout << "size of pool is " << poolSize << "\n";
         for (size_t i = 0; i < poolSize; i++) {
             threads.emplace_back(std::thread(&threadLoop));
         }

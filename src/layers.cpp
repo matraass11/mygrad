@@ -58,31 +58,14 @@ void LinearLayer::backward() {
 void LinearLayer::matmulWithBiasBackward() {
     if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
 
-    // auto processRow = [&] (size_t rowStart, size_t rowEnd) {
-    //     for (size_t row = rowStart; row < rowEnd; row++){
-    //         for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
-    //             dtype currentGradPassedDown = outputTensor.gradAt({row, column});
-                
-    //             for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
-    //                 currentInputTensor->gradAt({row, dotProductIterator}) +=
-    //                     weights.at({column, dotProductIterator}) * currentGradPassedDown;
-
-    //                 weights.gradAt({column, dotProductIterator}) += 
-    //                     currentInputTensor->at({row, dotProductIterator}) * currentGradPassedDown; 
-    //                 }
-
-    //             biases.gradAt({0, column}) += currentGradPassedDown;
-    //         }
-    //     }
-    // };
-
     const size_t threads_n = ThreadPool::size();
-    // std::vector<std::future<void>> futures(threads_n);
-    const size_t chunkSize = std::ceil(outputTensor.dimensions[0] / threads_n);
+    const size_t chunkSize = std::ceil(outputTensor.dimensions[0] / (double) threads_n);
     for (size_t t=0; t < threads_n; t++) {
-        size_t start = chunkSize * t, end = std::min(start+chunkSize, outputTensor.dimensions[0]); 
-        ThreadPool::push([this, start, end] () {
-            for (size_t row = start; row < end; row++){
+        size_t startRow = chunkSize * t, endRow = std::min(startRow+chunkSize, outputTensor.dimensions[0]); 
+        ThreadPool::push(
+
+            [this, startRow, endRow] () {
+            for (size_t row = startRow; row < endRow; row++){
                 for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
                     dtype currentGradPassedDown = outputTensor.gradAt({row, column});
                     
@@ -101,8 +84,6 @@ void LinearLayer::matmulWithBiasBackward() {
     }
 
     ThreadPool::waitUntilDone();
-
-    // for (auto& future: futures) future.get();
 
 }
 
@@ -130,29 +111,29 @@ void LinearLayer::manageDimensions(const Tensor& inputTensor) {
 
 void LinearLayer::matmulWithBias() {
 
-    auto processRow = [&](size_t startRow, size_t endRow) {
-        for (size_t inputRow=startRow; inputRow < endRow; inputRow++) {
-            for (size_t weightRow=0; weightRow < outputTensor.dimensions[1]; weightRow++) {
-                outputTensor.at({inputRow, weightRow}) = std::transform_reduce(
-                    std::execution::par_unseq, 
-                    &currentInputTensor->at({inputRow, 0}), 
-                    &currentInputTensor->at({inputRow, currentInputTensor->dimensions[1] - 1}),
-                    &weights.at({weightRow, 0}),
-                    biases.at({0, weightRow})
-                ); // dot product
-            }
-        }
-    };
-
-    const size_t threads_n = std::thread::hardware_concurrency();
-    std::vector<std::future<void>> futures(threads_n);
+    const size_t threads_n = ThreadPool::size();
     const size_t chunkSize = std::ceil( (double) outputTensor.dimensions[0] / threads_n);
-    for (size_t t=0; t < futures.size(); t++) {
-        size_t start = chunkSize * t, end = std::min(start+chunkSize, outputTensor.dimensions[0]); 
-        futures[t] = std::async(std::launch::async, processRow, start, end);
+
+    for (size_t t=0; t < threads_n; t++) {
+        size_t startRow = chunkSize * t, endRow = std::min(startRow+chunkSize, outputTensor.dimensions[0]); 
+        ThreadPool::push(
+            [this, startRow, endRow] {
+                for (size_t inputRow=startRow; inputRow < endRow; inputRow++) {
+                    for (size_t weightRow=0; weightRow < outputTensor.dimensions[1]; weightRow++) {
+                        outputTensor.at({inputRow, weightRow}) = std::transform_reduce(
+                            std::execution::par_unseq, 
+                            &currentInputTensor->at({inputRow, 0}), 
+                            &currentInputTensor->at({inputRow, currentInputTensor->dimensions[1] - 1}),
+                            &weights.at({weightRow, 0}),
+                            biases.at({0, weightRow})
+                        ); // dot product
+                    }
+                }
+            }
+        );
     }
 
-    for (auto& future: futures) future.get();
+    ThreadPool::waitUntilDone();
 
 }
 
