@@ -22,24 +22,26 @@ Adam::Adam(const std::vector<Tensor*>& parameters, dtype learningRate,
 void Adam::step() {
     stepsMade++;
 
-    // const size_t threads_n = ThreadPool::size();
-    // const size_t chunkSize = std::ceil(paramsAndGrads.size() / (double) threads_n);
-    // for (size_t t=0; t < threads_n; t++) {
-    //     size_t start = chunkSize * t, end = std::min(start+chunkSize, outputTensor.dimensions[0]); 
-    //     ThreadPool::push([]
+    const size_t threads_n = ThreadPool::size();
+    const size_t chunkSize = std::ceil(paramsAndGrads.size() / (double) threads_n);
+    for (size_t t=0; t < threads_n; t++) {
+        size_t start = chunkSize * t, end = std::min(start+chunkSize, paramsAndGrads.size()); 
+        ThreadPool::push([this, start, end] {
+            for (size_t i = start; i < end; i++) {
+                dtype& data = paramsAndGrads[i].data, &grad = paramsAndGrads[i].grad;
+                dtype& gradRunAvg = paramsAndGrads[i].gradRunAvg, &gradSqRunAvg = paramsAndGrads[i].gradSqRunAvg;
+                grad += weightDecay*data;
+                gradRunAvg = ( beta1*gradRunAvg + (1 - beta1)*grad );
+                gradSqRunAvg = ( beta2*gradSqRunAvg + (1 - beta2)*grad*grad );
 
-    for (size_t i = 0; i < paramsAndGrads.size(); i++) {
-        dtype& data = paramsAndGrads[i].data, &grad = paramsAndGrads[i].grad;
-        dtype& gradRunAvg = paramsAndGrads[i].gradRunAvg, &gradSqRunAvg = paramsAndGrads[i].gradSqRunAvg;
-        grad += weightDecay*data;
-        gradRunAvg = ( beta1*gradRunAvg + (1 - beta1)*grad );
-        gradSqRunAvg = ( beta2*gradSqRunAvg + (1 - beta2)*grad*grad );
+                dtype gradRunAvgCorrected = gradRunAvg / (1 - std::pow(beta1, stepsMade));
+                dtype gradSqRunAvgCorrected = gradSqRunAvg / (1 - std::pow(beta2, stepsMade));
 
-        dtype gradRunAvgCorrected = gradRunAvg / (1 - std::pow(beta1, stepsMade));
-        dtype gradSqRunAvgCorrected = gradSqRunAvg / (1 - std::pow(beta2, stepsMade));
-
-        data -= learningRate*gradRunAvgCorrected / (std::sqrt(gradSqRunAvgCorrected) + epsilon);
+                data -= learningRate*gradRunAvgCorrected / (std::sqrt(gradSqRunAvgCorrected) + epsilon);
+            }
+        });
     }
+    ThreadPool::waitUntilDone();
 }
 
 } // namespace mygrad
