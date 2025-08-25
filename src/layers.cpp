@@ -6,10 +6,10 @@
 #include <thread>
 
 #include <numeric>
-#include <execution>
+#include <execution> 
 
 
-#include <cassert>
+#include <cassert> // REMOVE UNNECESSARY INCLUDES!!!
 
 #include "mygrad/layers.hpp"
 #include "mygrad/threadPool.hpp"
@@ -72,7 +72,7 @@ void LinearLayer::matmulWithBiasBackward() {
     for (size_t t=0; t < threads_n; t++) {
         size_t startRow = chunkSize * t, endRow = std::min(startRow+chunkSize, outputTensor.dimensions[0]); 
         ThreadPool::push(
-            
+
             [this, startRow, endRow] () {
                 const size_t inpTensorColumns = currentInputTensor->dimensions[1];
                 const size_t weightColumns = weights.dimensions[1];
@@ -311,6 +311,7 @@ void Reshape::forward( Tensor& inputTensor ) {
 }
 
 void Reshape::backward() {
+    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
 
     for (size_t i = 0; i < currentInputTensor->length; i++) {
         currentInputTensor->grads[i] += outputTensor.grads[i];
@@ -342,7 +343,90 @@ void Reshape::manageDimensions( const Tensor& inputTensor ) {
 
         }   
 
-        else throw std::runtime_error("reshape can't be done when the length of the input and the output is different");
+        else throw std::runtime_error("reshape can't be done when the length of the input and the output are different");
+    }
+}
+
+
+dtype MaxPool2d::pool(size_t pictureIndex, size_t channelIndex, size_t inputRow, size_t inputCol) const {
+    dtype max = currentInputTensor->at( {pictureIndex, channelIndex, inputRow, inputCol} );
+    for (size_t row = inputRow; row < std::min(inputRow + kernelSize, currentInputTensor->dimensions[2]); row++) {
+        for (size_t col = inputCol; col < std::min(inputCol + kernelSize, currentInputTensor->dimensions[3]); col++) {
+            dtype value = currentInputTensor->at({pictureIndex, channelIndex, row, col});
+            if (value > max) {
+                max = value;
+            }
+        }
+    }
+    return max;
+}
+
+
+void MaxPool2d::forward( Tensor& inputTensor ) {
+    manageDimensions(inputTensor);
+    setInputTensorPointer(&inputTensor);
+
+    size_t locInOutput = 0;
+
+    for (size_t picture = 0; picture < inputTensor.dimensions[0]; picture++) {
+        for (size_t channelOut = 0; channelOut < inputTensor.dimensions[1]; channelOut++) {
+            for (size_t row = 0; row < inputTensor.dimensions[2] - kernelSize + 1; row += kernelSize) {
+                for (size_t col = 0; col < inputTensor.dimensions[3] - kernelSize + 1; col += kernelSize) {
+                
+                    outputTensor.data[locInOutput] = pool(picture, channelOut, row, col);
+                    locInOutput++;
+                }
+            }
+        }
+    }
+}
+
+void MaxPool2d::poolBackward(size_t pictureIndex, size_t channelIndex, size_t inputRow, size_t inputCol, dtype gradPassedDown) {
+    TensorIndices maxIndices = {pictureIndex, channelIndex, inputRow, inputCol};
+    dtype maxValue = currentInputTensor->at({pictureIndex, channelIndex, inputRow, inputCol});
+    for (size_t row = inputRow; row < std::min(inputRow + kernelSize, currentInputTensor->dimensions[2]); row++) {
+        for (size_t col = inputCol; col < std::min(inputCol + kernelSize, currentInputTensor->dimensions[3]); col++) {
+            dtype value = currentInputTensor->at({pictureIndex, channelIndex, row, col});
+            if (value > maxValue) {
+                maxValue = value;
+                maxIndices = {pictureIndex, channelIndex, row, col};
+            }
+        }
+    }
+    currentInputTensor->gradAt(maxIndices) += gradPassedDown;
+}
+
+
+void MaxPool2d::backward() {
+    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+
+    size_t locInOutput = 0;
+
+    for (size_t picture = 0; picture < currentInputTensor->dimensions[0]; picture++) {
+        for (size_t channelOut = 0; channelOut < currentInputTensor->dimensions[1]; channelOut++) {
+            for (size_t row = 0; row < currentInputTensor->dimensions[2] - kernelSize + 1; row += kernelSize) {
+                for (size_t col = 0; col < currentInputTensor->dimensions[3] - kernelSize + 1; col += kernelSize) {
+                
+                    poolBackward(picture, channelOut, row, col, outputTensor.grads[locInOutput]);
+                    locInOutput++;
+                }
+            }
+        }
+    }
+
+    setInputTensorPointer(nullptr);
+}
+
+void MaxPool2d::manageDimensions( const Tensor& inputTensor ) {
+    if (inputTensor.dimensions.size() != 4) throw std::runtime_error("input tensor dimensionality must be four for MaxPool2d");
+
+    TensorDims neededOutTensorDims = { inputTensor.dimensions[0],
+                                       inputTensor.dimensions[1],
+                                       inputTensor.dimensions[2] / kernelSize,
+                                       inputTensor.dimensions[3] / kernelSize };
+
+    if (outputTensor.dimensions != neededOutTensorDims) {
+        adjustOutTensorDimensions(neededOutTensorDims);
     }
 }
 
