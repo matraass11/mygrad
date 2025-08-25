@@ -1,9 +1,7 @@
 #include <filesystem>
 #include <stdexcept>
 #include <string>
-#include <future>
 #include <cmath>
-// #include <thread>
 
 #include "processData.hpp"
 
@@ -65,46 +63,40 @@ static Tensor tensorWithImageData(const std::vector<size_t>& indices) {
 
     const std::string pathToDir = std::filesystem::current_path() / "../catsData/Data/"; 
 
-    auto worker = [&](size_t start, size_t end) {
-        for (size_t i = start; i < end; i++) {
-    
-            int columns, rows, channels;
-            std::string filename = pathToDir + "cat_" + std::to_string( indices[i] ) + ".png";
-            unsigned char* data = stbi_load(filename.c_str(), &columns, &rows, &channels, 3);  
-            // array laid out contiguously as [rows, columns, channels]
-    
-            if (!data) throw std::runtime_error("failed to load image at " + filename + "\nrun the program from the build directory");
-    
-            if (columns != expectedSize or rows != expectedSize or channels != expectedChannels) {
-                throw std::runtime_error("data appears to have been read incorrectly, dimensions do not match");
-            }
-            
-    
-            for (size_t channel = 0; channel < channels; channel++) {
-                for (size_t row = 0; row < rows; row++) {
-                    for (size_t col = 0; col < columns; col++) {
-                        size_t locInData = row*columns*channels + col*channels + channel;
-                        dataTensor.at({i, channel, row, col}) = data[locInData];
-                    } 
+    const size_t threads_n = ThreadPool::size();
+    const size_t chunkSize = std::ceil(indices.size() / (double) threads_n);
+    for (size_t t=0; t < threads_n; t++) {
+        size_t start = chunkSize * t, end = std::min(start+chunkSize, indices.size()); 
+        ThreadPool::push([&, start, end] {
+            for (size_t i = start; i < end; i++) {
+        
+                int columns, rows, channels;
+                std::string filename = pathToDir + "cat_" + std::to_string( indices[i] ) + ".png";
+                unsigned char* data = stbi_load(filename.c_str(), &columns, &rows, &channels, 3);  
+                // array laid out contiguously as [rows, columns, channels]
+        
+                if (!data) throw std::runtime_error("failed to load image at " + filename + "\nrun the program from the build directory");
+        
+                if (columns != expectedSize or rows != expectedSize or channels != expectedChannels) {
+                    throw std::runtime_error("data appears to have been read incorrectly, dimensions do not match");
                 }
+                
+        
+                for (size_t channel = 0; channel < channels; channel++) {
+                    for (size_t row = 0; row < rows; row++) {
+                        for (size_t col = 0; col < columns; col++) {
+                            size_t locInData = row*columns*channels + col*channels + channel;
+                            dataTensor.at({i, channel, row, col}) = data[locInData];
+                        } 
+                    }
+                }
+                free(data);
+
             }
-            free(data);
-
-        }
-        std::cout << "i'm done!" << std::endl;
-    };
-
-    const size_t threads_n = std::thread::hardware_concurrency();
-    const size_t chunkSize = std::ceil(indices.size() / threads_n);
-    std::vector<std::future<void>> futures(threads_n);
-    for (int thread = 0; thread < threads_n; thread++) {
-        const size_t start = chunkSize * thread, end = std::min(start+chunkSize, indices.size()); 
-        futures[thread] = std::async(std::launch::async, worker, start, end);
+        });
     }
 
-    for (auto& future: futures) future.get();
-
-    convertTensorToPng(dataTensor, 123, "../test.png");
+    ThreadPool::waitUntilDone();
 
     return dataTensor;
 }

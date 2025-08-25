@@ -1,15 +1,10 @@
 #include <iostream>
 #include <stdexcept>
 #include <cmath>
-
-#include <future>
-#include <thread>
-
 #include <numeric>
 #include <execution> 
 
-
-#include <cassert> // REMOVE UNNECESSARY INCLUDES!!!
+#include <cassert> 
 
 #include "mygrad/layers.hpp"
 #include "mygrad/threadPool.hpp"
