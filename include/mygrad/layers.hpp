@@ -106,4 +106,24 @@ private:
 };
 
 
+struct MaxPool2d : Layer {
+
+    const size_t kernelSize;
+    
+    MaxPool2d( size_t kernelSize ) : kernelSize(kernelSize) {};
+    
+    void forward( Tensor& inputTensor ) override;
+    void backward() override;
+    
+    std::vector<Tensor*> parameterTensors() override { return {}; }
+    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
+    
+private:
+    dtype pool(size_t pictureIndex, size_t filterIndex, size_t inputRow, size_t inputCol) const;
+    void poolBackward(size_t pictureIndex, size_t channelIndex, size_t inputRow, size_t inputCol, dtype gradPassedDown);
+
+    inline void manageDimensions( const Tensor& inputTensor ) override;
+};
+
+
 } // namespace mygrad
