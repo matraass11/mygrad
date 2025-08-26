@@ -56,11 +56,8 @@ void Model::printGrads() const {
 }
 
 void Model::zeroGrad() {
-    for (Tensor *const parameterTensor: parameters) {
-        parameterTensor->zeroGrad();
-    }
-    for (Tensor *const parameterTensor: nonParameters) {
-        parameterTensor->zeroGrad();
+    for (size_t i = 0; i < layers.size(); i++) {
+        layers[i].zeroGrad();
     }
 }
 

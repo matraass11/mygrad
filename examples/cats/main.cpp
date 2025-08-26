@@ -60,10 +60,10 @@ int main() {
     // c.forward(t);
     // c.outputTensor.print();
 
-    for (size_t i = 0; i < c.outputTensor.length; i++) {
-        c.outputTensor.grads[i] = 1;
-    }
+    // for (size_t i = 0; i < c.outputTensor.length; i++) {
+    //     c.outputTensor.grads[i] = 1;
+    // }
     
-    c.backward();
-    c.biases.printGrad();
+    // c.backward();
+    // c.biases.printGrad();
 }
