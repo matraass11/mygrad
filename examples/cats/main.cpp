@@ -20,6 +20,13 @@ int main() {
     const size_t neurons = 128;
     const size_t latent = 20;
 
+    Tensor input {{1, 2, 3}, {3}};
+    Tensor output {{2, 1, 3}, {3}};
+    MSEloss loss;
+    std::cout << loss(output, input) << "\n";
+    loss.backward();
+    output.printGrad();
+
 
     Model encoder {
         LinearLayer(pixelsInImage, neurons),
@@ -33,7 +40,6 @@ int main() {
         LinearLayer(neurons, latent * 2), // first 20 columns of output are the means, second 20 columns are the logvariances. 
         // reparameterize simply interprets it that way 
         // and outputs a tensor with values sampled from the distributions of shape [batchSize x latent]
-        // Reparameterize(latent)
     };
 
     // Reparameterize reparam (latent)
@@ -52,7 +58,8 @@ int main() {
     // Tensor& outputs = decoder(samples)
     // loss = kldiv(latentDistribution, {0, 1}) + mse(inputs, outputs)
 
-    // encoder.zeroGrad(), 
+
+    // encoder.zeroGrad(), reparam.zeroGrad(), decoder.zeroGrad()
     // mse.backward()
     // decoder.backward()
     // reparam.backward()
