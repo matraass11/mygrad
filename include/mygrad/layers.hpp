@@ -70,7 +70,7 @@ struct Conv2d : Layer {
     Tensor kernels;
     Tensor biases;
 
-    Conv2d( size_t inChannels, size_t outChannels, size_t kernelSize, size_t stride, size_t paddingSize );
+    Conv2d( size_t inChannels, size_t outChannels, size_t kernelSize, size_t stride, size_t paddingSize = 0 );
 
     void print();
 
