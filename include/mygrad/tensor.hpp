@@ -35,29 +35,26 @@ public:
     void printGrad() const;
 
 
-    inline dtype& at(const TensorDims& indices)          { return data[indicesToLocationIn1dArray(indices)]; }
-
-    inline dtype at(const TensorDims& indices)     const { return data[indicesToLocationIn1dArray(indices)]; }
-
-    inline dtype& gradAt(const TensorDims& indices)      { return grads[indicesToLocationIn1dArray(indices)]; }
-
-    inline dtype gradAt(const TensorDims& indices) const { return grads[indicesToLocationIn1dArray(indices)]; }
+    dtype& at(const TensorIndices& indices);   
+    dtype at(const TensorIndices& indices) const;
+    dtype& gradAt(const TensorIndices& indices);
+    dtype gradAt(const TensorIndices& indices) const;
 
 
-    inline void reshape(const TensorDims& newDimensions) {
+    void reshape(const TensorDims& newDimensions) {
         if (lengthFromDimensions(newDimensions) != length) 
             throw std::runtime_error("tensor reshaped into dimensions with length different from the current one");
         dimensions = newDimensions;
         strides = stridesFromDimensions(newDimensions);
     }
 
-    inline void zeroGrad() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
-    inline void zeroData() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
+    void zeroGrad() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
+    void zeroData() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
 
 
     static TensorStrides stridesFromDimensions(const TensorDims& dimensions);
     static size_t lengthFromDimensions(const TensorDims& dimensions);
-    size_t indicesToLocationIn1dArray(const TensorDims& indices) const;
+    size_t indicesToLocationIn1dArray(const TensorDims& indices) const noexcept;
     TensorDims locationIn1dArrayToIndices(size_t location) const;
 
     Tensor operator+( const Tensor& other ) const;
