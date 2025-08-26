@@ -60,7 +60,9 @@ void LinearLayer::backward() {
 }
 
 void LinearLayer::matmulWithBiasBackward() {
-    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    #ifndef NDEBUG
+        if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    #endif
 
     const size_t threads_n = ThreadPool::size();
     const size_t chunkSize = std::ceil(outputTensor.dimensions[0] / (double) threads_n);
@@ -159,7 +161,9 @@ void ReLU::manageDimensions( const Tensor& inputTensor ) {
 }
 
 void ReLU::backward() {
-    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    #ifndef NDEBUG
+        if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    #endif
 
     for (size_t i = 0; i < currentInputTensor->length; i++) {
         currentInputTensor->grads[i] = (currentInputTensor->data[i] >= 0 ? outputTensor.grads[i] : 0);
@@ -184,18 +188,28 @@ void Conv2d::print() {
 dtype Conv2d::convolve(size_t pictureIndex, size_t outChannel, int inputRow, int inputCol) const {
     dtype sum = biases.data[outChannel];
 
+    Tensor& input = *currentInputTensor;
+    const size_t almostInpLoc = pictureIndex * input.strides[0] + inputRow * input.strides[2] + inputCol * input.strides[3];
+
     for (size_t inputChannel = 0; inputChannel < inChannels; inputChannel++) {
+        const size_t leftUpperCornerInpLoc = almostInpLoc + inputChannel * input.strides[1];
         for (size_t kernelRow = 0; kernelRow < kernelSize; kernelRow++) {
             for (size_t kernelCol = 0; kernelCol < kernelSize; kernelCol++) {
 
                 if (inputRow + kernelRow < 0 or inputCol + kernelCol < 0 or 
-                    inputRow + kernelRow >= currentInputTensor->dimensions[2] or
-                    inputCol + kernelCol >= currentInputTensor->dimensions[3]) {
+                    inputRow + kernelRow >= input.dimensions[2] or
+                    inputCol + kernelCol >= input.dimensions[3]) {
                     continue;
                 }
 
-                sum +=  currentInputTensor->at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) * 
-                        kernels.at( {outChannel, inputChannel, kernelRow, kernelCol} );
+                const size_t inpLoc = leftUpperCornerInpLoc + kernelRow * input.strides[2] + kernelCol;
+                const size_t kernelLoc = outChannel * kernels.strides[0] + inputChannel * kernels.strides[1] + 
+                                         kernelRow  * kernels.strides[2] + kernelCol;
+
+                sum += input.data[inpLoc] * kernels.data[kernelLoc];
+
+                // sum +=  currentInputTensor->at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) * 
+                //         kernels.at( {outChannel, inputChannel, kernelRow, kernelCol} );
             }
         }
     }
@@ -208,28 +222,43 @@ void Conv2d::forward(Tensor& inputTensor) {
     manageDimensions( inputTensor );
     setInputTensorPointer( &inputTensor );
 
-    size_t locInOutput = 0;
 
-    for (size_t picture = 0; picture < inputTensor.dimensions[0]; picture++) {
-        for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
-            for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(inputTensor.dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
+    const size_t threads_n = ThreadPool::size();
+    const size_t chunkSize = std::ceil( (double) inputTensor.dimensions[0] / threads_n);
 
-                for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
-                
-                    outputTensor.data[locInOutput] = convolve(picture, channelOut, row, column);
-                    // std::cout << outputTensor.data[locInOutput] << ", ";
-                    locInOutput++;
+    for (size_t t=0; t < threads_n; t++) {
+        size_t startPicture = chunkSize * t, endPicture = std::min(startPicture+chunkSize, outputTensor.dimensions[0]); 
+        ThreadPool::push([this, &inputTensor, startPicture, endPicture] {
+
+            size_t locInOutput = startPicture * outputTensor.strides[0];
+
+            for (size_t picture = startPicture; picture < endPicture; picture++) {
+                for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
+                    for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(inputTensor.dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
+
+                        for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
+                        
+                            outputTensor.data[locInOutput] = convolve(picture, channelOut, row, column);
+                            // std::cout << outputTensor.data[locInOutput] << ", ";
+                            locInOutput++;
+                        }
+                    }
                 }
             }
-        }
+        });
     }
+
+    ThreadPool::waitUntilDone();
 }
 
 void Conv2d::convolveBackward(size_t pictureIndex, size_t outChannel, int inputRow, int inputCol, dtype gradPassedDown) {
 
     biases.gradAt( {outChannel} ) += gradPassedDown;
+    Tensor& input = *currentInputTensor;
+    const size_t almostInpLoc = pictureIndex * input.strides[0] + inputRow * input.strides[2] + inputCol * input.strides[3];
 
     for (size_t inputChannel = 0; inputChannel < inChannels; inputChannel++) {
+        const size_t leftUpperCornerInpLoc = almostInpLoc + inputChannel * input.strides[1];
         for (size_t kernelRow = 0; kernelRow < kernelSize; kernelRow++) {
             for (size_t kernelCol = 0; kernelCol < kernelSize; kernelCol++) {
 
@@ -239,34 +268,73 @@ void Conv2d::convolveBackward(size_t pictureIndex, size_t outChannel, int inputR
                     continue;
                 }
 
-                currentInputTensor->gradAt( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) += 
-                    kernels.at( {outChannel, inputChannel, kernelRow, kernelCol} ) * gradPassedDown;
+                // currentInputTensor->gradAt( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ) += 
+                //     kernels.at( {outChannel, inputChannel, kernelRow, kernelCol} ) * gradPassedDown;
+                
+                // kernels.gradAt( {outChannel, inputChannel, kernelRow, kernelCol} ) += gradPassedDown * 
+                //     currentInputTensor->at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ); 
+                
+                // check if replacing at with manual indexing will speed it up
 
-                kernels.gradAt( {outChannel, inputChannel, kernelRow, kernelCol} ) += gradPassedDown * 
-                    currentInputTensor->at( {pictureIndex, inputChannel, inputRow + kernelRow, inputCol + kernelCol} ); 
+                const size_t inpLoc = leftUpperCornerInpLoc + kernelRow * input.strides[2] + kernelCol;
+                const size_t kernelLoc = outChannel * kernels.strides[0] + inputChannel * kernels.strides[1] + 
+                                         kernelRow  * kernels.strides[2] + kernelCol;
+
+                input.grads[inpLoc] += kernels.data[kernelLoc] * gradPassedDown;
+                kernels.grads[kernelLoc] += input.data[inpLoc] * gradPassedDown;
             }
         }
     }
 }
 
 void Conv2d::backward() {
-    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    #ifndef NDEBUG
+        if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    #endif
 
-    size_t locInOutput = 0;
+    // size_t locInOutput = 0;
 
-    for (size_t picture = 0; picture < currentInputTensor->dimensions[0]; picture++) {
-        for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
-            for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(currentInputTensor->dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
+    // for (size_t picture = 0; picture < currentInputTensor->dimensions[0]; picture++) {
+    //     for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
+    //         for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(currentInputTensor->dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
 
-                for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(currentInputTensor->dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
+    //             for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(currentInputTensor->dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
 
-                    dtype gradPassedDown = outputTensor.grads[locInOutput];
-                    convolveBackward(picture, channelOut, row, column, gradPassedDown);
-                    locInOutput++;
+    //                 dtype gradPassedDown = outputTensor.grads[locInOutput];
+    //                 convolveBackward(picture, channelOut, row, column, gradPassedDown);
+    //                 locInOutput++;
+    //             }
+    //         }
+    //     }
+    // }
+
+    Tensor& inputTensor = *currentInputTensor;
+    const size_t threads_n = ThreadPool::size();
+    const size_t chunkSize = std::ceil( (double) inputTensor.dimensions[0] / threads_n);
+
+    for (size_t t=0; t < threads_n; t++) {
+        size_t startPicture = chunkSize * t, endPicture = std::min(startPicture+chunkSize, outputTensor.dimensions[0]); 
+        ThreadPool::push([this, &inputTensor, startPicture, endPicture] {
+
+            size_t locInOutput = startPicture * outputTensor.strides[0];
+
+            for (size_t picture = startPicture; picture < endPicture; picture++) {
+                for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
+                    for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(inputTensor.dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
+
+                        for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
+                        
+                            dtype gradPassedDown = outputTensor.grads[locInOutput];
+                            convolveBackward(picture, channelOut, row, column, gradPassedDown);
+                            locInOutput++;
+                        }
+                    }
                 }
             }
-        }
+        });
     }
+
+    ThreadPool::waitUntilDone();
 
     setInputTensorPointer(nullptr);
 }
@@ -280,9 +348,9 @@ void Conv2d::manageDimensions( const Tensor& inputTensor ) {
     };
 
     TensorDims neededOutTensorDims = { inputTensor.dimensions[0],
-                                                outChannels,
-                                                convolvedSize(inputTensor.dimensions[2]),
-                                                convolvedSize(inputTensor.dimensions[3]) };
+                                       outChannels,
+                                       convolvedSize(inputTensor.dimensions[2]),
+                                       convolvedSize(inputTensor.dimensions[3]) };
     if (outputTensor.dimensions != neededOutTensorDims) {
         adjustOutTensorDimensions(neededOutTensorDims);
     }
@@ -306,7 +374,10 @@ void Reshape::forward( Tensor& inputTensor ) {
 }
 
 void Reshape::backward() {
-    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    
+    #ifndef NDEBUG
+        if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    #endif
 
     for (size_t i = 0; i < currentInputTensor->length; i++) {
         currentInputTensor->grads[i] += outputTensor.grads[i];
