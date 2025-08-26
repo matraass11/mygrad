@@ -19,11 +19,22 @@ int main(int argc, char* argv[]) {
     const size_t pixelsInImage = 784;
     const size_t numberOfClasses = 10;
     const size_t neurons = 100;
+    const size_t channels = 32;
+    const size_t inputsToLinear = std::pow((28 - 5 + 1 - 3 + 1) / 2, 2) * channels;
 
     Model model (
-        LinearLayer( pixelsInImage, neurons ),
+        // LinearLayer( pixelsInImage, neurons ),
+        // ReLU(),
+        // LinearLayer( neurons, neurons ),
+        // ReLU(),
+        // LinearLayer( neurons, numberOfClasses )
+        Conv2d(1, channels, 5, 1),
         ReLU(),
-        LinearLayer( neurons, neurons ),
+        Conv2d(channels, channels, 3, 1),
+        ReLU(),
+        MaxPool2d(2),
+        Reshape( {1, inputsToLinear }, 0),
+        LinearLayer( inputsToLinear, neurons ),
         ReLU(),
         LinearLayer( neurons, numberOfClasses )
     );

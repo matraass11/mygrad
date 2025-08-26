@@ -48,7 +48,7 @@ void showModel(Model& model) {
 
         std::cout << "\n==============================\n";
         Tensor input = retrieveBatchFromData(standartizedTestImages, {randomIndices[i]});
-        input.reshape({1, 784});
+        // input.reshape({1, 784});
         visualizeImage(testImages, randomIndices[i]);
         const Tensor prediction = model(input).argmax(1);
         // std::cout << "\n==============================\n";
@@ -65,15 +65,15 @@ static dtype train(Model& model, Tensor& data, Tensor& labels, CrossEntropyLoss&
     for (int batch = 0; batch < labels.length / batchSize; batch++) {
         std::vector<size_t> batchIndices = slicedIndices(indices, batch*batchSize, batchSize);
         Tensor batchInputs = retrieveBatchFromData(data, batchIndices);
-        Tensor batchLabels = retrieveBatchFromLabels(labels, batchIndices);
+        Tensor batchLabels = retrieveBatchFromLabels(labels, batchIndices); 
 
-        batchInputs.reshape({batchIndices.size(), static_cast<size_t>(batchInputs.strides[0])});
+        // batchInputs.reshape({batchIndices.size(), static_cast<size_t>(batchInputs.strides[0])});
 
         Tensor& output = model.forward(batchInputs);
 
         dtype l = loss(output, batchLabels);
 
-        if (batch % 5 == 0) {
+        if (batch % 1 == 0) {
             std::cout << "batch - " << batch << ", loss - " << l << "\n";
         }
         avgLoss += l;
@@ -84,10 +84,10 @@ static dtype train(Model& model, Tensor& data, Tensor& labels, CrossEntropyLoss&
         model.zeroGrad();
 
 
-        // // FOR SPEEDUP TESTING 
-        // if (batch == 25) {
-        //     break;
-        // }
+        // FOR SPEEDUP TESTING 
+        if (batch == 10) {
+            break;
+        }
 
     }
     avgLoss /= (labels.length / batchSize);
@@ -104,7 +104,7 @@ static dtype test(Model& model, Tensor& data, Tensor& labels, size_t batchSize) 
         Tensor batchInputs = retrieveBatchFromData(data, batchIndices);
         Tensor batchLabels = retrieveBatchFromLabels(labels, batchIndices);
 
-        batchInputs.reshape({batchSize, static_cast<size_t>(batchInputs.strides[0])});
+        // batchInputs.reshape({batchSize, static_cast<size_t>(batchInputs.strides[0])});
 
         const Tensor& predictions = model.forward(batchInputs).argmax(1);
 

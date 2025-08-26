@@ -24,14 +24,14 @@ Tensor loadMnistImages(const std::string& path) {
     n_rows        = __builtin_bswap32(n_rows);
     n_cols        = __builtin_bswap32(n_cols);
 
-    Tensor images = Tensor::zeros({static_cast<size_t>(n_images), static_cast<size_t>(n_rows), static_cast<size_t>(n_cols)});
+    Tensor images = Tensor::zeros({static_cast<size_t>(n_images), 1, static_cast<size_t>(n_rows), static_cast<size_t>(n_cols)});
 
     for (size_t i = 0; i < static_cast<size_t>(n_images); ++i) {
         for (size_t r = 0; r < static_cast<size_t>(n_rows); ++r) {
             for (size_t c = 0; c < static_cast<size_t>(n_cols); ++c) {
                 unsigned char pixel = 0;
                 file.read((char*)&pixel, 1);
-                images.at({i, r, c}) = static_cast<dtype>(pixel) / 255.0;
+                images.at({i, 0, r, c}) = static_cast<dtype>(pixel) / 255.0;
             }
         }
     }
@@ -65,14 +65,23 @@ Tensor loadMnistLabels(const std::string& path) {
 
 
 void visualizeImage(const Tensor& images, size_t index) {
-    const int rows = images.dimensions[1];
-    const int cols = images.dimensions[2];
+    const size_t imagesDimensionality = images.dimensions.size();
+    if (imagesDimensionality != 3 and imagesDimensionality != 4) throw std::runtime_error("image to visualize must have dimensionality = 3 or 4");
+
+    const size_t rows = images.dimensions[imagesDimensionality - 2];
+    const size_t cols = images.dimensions[imagesDimensionality - 1];
 
     const char* grayRamp = " .:-=+*#%@"; // from light to dark
 
     for (size_t r = 0; r < rows; ++r) {
         for (size_t c = 0; c < cols; ++c) {
-            dtype pixel = images.at({index, r, c});
+            dtype pixel;
+            if (imagesDimensionality == 4) {
+                pixel = images.at({index, 0, r, c});
+            }
+            else {
+                pixel = images.at({index, r, c});
+            };
             pixel = std::max(0.0, std::min(1.0, pixel));
             size_t level = (pixel * (strlen(grayRamp) - 1));
             std::cout << grayRamp[level];
