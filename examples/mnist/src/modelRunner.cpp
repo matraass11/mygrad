@@ -73,7 +73,7 @@ static dtype train(Model& model, Tensor& data, Tensor& labels, CrossEntropyLoss&
 
         dtype l = loss(output, batchLabels);
 
-        if (batch % 1 == 0) {
+        if (batch % 5 == 0) {
             std::cout << "batch - " << batch << ", loss - " << l << "\n";
         }
         avgLoss += l;
@@ -84,10 +84,10 @@ static dtype train(Model& model, Tensor& data, Tensor& labels, CrossEntropyLoss&
         model.zeroGrad();
 
 
-        // FOR SPEEDUP TESTING 
-        if (batch == 10) {
-            break;
-        }
+        // // FOR SPEEDUP TESTING 
+        // if (batch == 10) {
+        //     break;
+        // }
 
     }
     avgLoss /= (labels.length / batchSize);
