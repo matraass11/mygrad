@@ -292,22 +292,6 @@ void Conv2d::backward() {
         if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
     #endif
 
-    // size_t locInOutput = 0;
-
-    // for (size_t picture = 0; picture < currentInputTensor->dimensions[0]; picture++) {
-    //     for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
-    //         for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(currentInputTensor->dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
-
-    //             for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(currentInputTensor->dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
-
-    //                 dtype gradPassedDown = outputTensor.grads[locInOutput];
-    //                 convolveBackward(picture, channelOut, row, column, gradPassedDown);
-    //                 locInOutput++;
-    //             }
-    //         }
-    //     }
-    // }
-
     Tensor& inputTensor = *currentInputTensor;
     const size_t threads_n = ThreadPool::size();
     const size_t chunkSize = std::ceil( (double) inputTensor.dimensions[0] / threads_n);
