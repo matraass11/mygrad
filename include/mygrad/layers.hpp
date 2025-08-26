@@ -20,6 +20,8 @@ struct Layer {
     virtual void backward()                            = 0;
     virtual std::vector<Tensor*> parameterTensors()    = 0;
     virtual std::vector<Tensor*> nonParameterTensors() = 0;
+
+    void zeroGrad();
     
 protected:
     inline void setInputTensorPointer( Tensor* inputTensor ); // relies on the input tensor not changing

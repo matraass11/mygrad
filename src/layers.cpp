@@ -30,6 +30,15 @@ void Layer::adjustOutTensorDimensions( const TensorDims& newDimensions ) {
     outputTensor = Tensor::zeros( newDimensions );
 }
 
+void Layer::zeroGrad() {
+    for (Tensor* t : parameterTensors()) {
+        t->zeroGrad();
+    }
+    for (Tensor* t : nonParameterTensors()) {
+        t->zeroGrad();
+    }
+}
+
 
 LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures,
                           const std::vector<dtype>& data ) :
