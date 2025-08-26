@@ -123,8 +123,7 @@ void LinearLayer::matmulWithBias() {
             [this, startRow, endRow] {
                 for (size_t inputRow=startRow; inputRow < endRow; inputRow++) {
                     for (size_t weightRow=0; weightRow < outputTensor.dimensions[1]; weightRow++) {
-                        outputTensor.at({inputRow, weightRow}) = std::transform_reduce(
-                            std::execution::par_unseq, 
+                        outputTensor.at({inputRow, weightRow}) = std::transform_reduce( 
                             &currentInputTensor->at({inputRow, 0}), 
                             &currentInputTensor->at({inputRow, currentInputTensor->dimensions[1] - 1}),
                             &weights.at({weightRow, 0}),
@@ -288,7 +287,7 @@ void Conv2d::manageDimensions( const Tensor& inputTensor ) {
 }
 
 
-Reshape::Reshape( const std::vector<size_t>& newDimensions, std::optional<size_t> freeDimension ) : 
+Reshape::Reshape( const TensorDims& newDimensions, std::optional<size_t> freeDimension ) : 
     newDimensions(newDimensions), freeDimension(freeDimension)
     { adjustOutTensorDimensions(newDimensions); }
 

@@ -87,10 +87,10 @@ private:
 
 struct Reshape : Layer {
 
-    std::vector<size_t> newDimensions;
+    TensorDims newDimensions;
     std::optional<size_t> freeDimension;
     
-    Reshape( const std::vector<size_t>& newDimensions, std::optional<size_t> freeDimension );
+    Reshape( const TensorDims& newDimensions, std::optional<size_t> freeDimension );
     
     void forward( Tensor& inputTensor ) override;
     void backward() override;
