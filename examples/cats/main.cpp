@@ -14,6 +14,6 @@ int main() {
     using namespace mygrad;
 
     Dataset catsData = loadCatImages(0.8, 0.1, 0.1);
-    convertTensorToPng(catsData.train, 100, "../testtt.png");
+    convertTensorToPng(catsData.train, 100, "../test.png");
 
 }
