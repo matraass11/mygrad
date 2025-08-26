@@ -64,6 +64,78 @@ void Tensor::printGrad() const {
     std::cout << "\n\n";
 }
 
+dtype& Tensor::at(const TensorIndices& indices) {
+    #ifndef NDEBUG
+        if (indices.size() != dimensions.size()){
+            throw std::runtime_error("invalid size of indices to convert to location in 1d");
+        } 
+    #endif
+
+    const size_t loc = indicesToLocationIn1dArray(indices);
+
+    #ifndef NDEBUG
+    if (loc > length){
+        throw std::runtime_error("indices to be converted to location in 1d are out of bound");
+    }
+    #endif
+
+    return data[loc];
+}
+
+dtype Tensor::at(const TensorIndices& indices) const {
+    #ifndef NDEBUG
+        if (indices.size() != dimensions.size()){
+            throw std::runtime_error("invalid size of indices to convert to location in 1d");
+        } 
+    #endif
+
+    const size_t loc = indicesToLocationIn1dArray(indices);
+
+    #ifndef NDEBUG
+    if (loc > length){
+        throw std::runtime_error("indices to be converted to location in 1d are out of bound");
+    }
+    #endif
+
+    return data[loc];
+}
+
+dtype& Tensor::gradAt(const TensorIndices& indices) {
+    #ifndef NDEBUG
+        if (indices.size() != dimensions.size()){
+            throw std::runtime_error("invalid size of indices to convert to location in 1d");
+        } 
+    #endif
+
+    const size_t loc = indicesToLocationIn1dArray(indices);
+
+    #ifndef NDEBUG
+    if (loc > length){
+        throw std::runtime_error("indices to be converted to location in 1d are out of bound");
+    }
+    #endif
+
+    return grads[loc];
+}
+
+dtype Tensor::gradAt(const TensorIndices& indices) const {
+    #ifndef NDEBUG
+        if (indices.size() != dimensions.size()){
+            throw std::runtime_error("invalid size of indices to convert to location in 1d");
+        } 
+    #endif
+
+    const size_t loc = indicesToLocationIn1dArray(indices);
+
+    #ifndef NDEBUG
+    if (loc > length){
+        throw std::runtime_error("indices to be converted to location in 1d are out of bound");
+    }
+    #endif
+
+    return grads[loc];
+}
+
 size_t Tensor::lengthFromDimensions(const TensorDims& dimensions) {
     size_t length = 1;
     for (size_t i=0; i<dimensions.size(); i++){
@@ -82,18 +154,13 @@ TensorStrides Tensor::stridesFromDimensions(const TensorDims& dimensions) {
     return strides;
 }
 
-size_t Tensor::indicesToLocationIn1dArray(const TensorDims& indices) const {
-    if (indices.size() != dimensions.size()){
-        throw std::runtime_error("invalid size of indices to convert to location in 1d");
-    }  
+size_t Tensor::indicesToLocationIn1dArray(const TensorDims& indices) const noexcept {
     size_t locationOfElementInDataArray = 0;
     size_t dimensionality = dimensions.size();
     for (size_t i=0; i < dimensionality; i++){
         locationOfElementInDataArray += indices[i] * strides[i];
     }
-    if (locationOfElementInDataArray > length){
-        throw std::runtime_error("indices to be converted to location in 1d are out of bound");
-    }
+
     return locationOfElementInDataArray;
 }
 
