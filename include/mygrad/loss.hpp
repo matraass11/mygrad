@@ -19,8 +19,26 @@ private:
     Tensor* logits = nullptr;
     Tensor currentSoftmaxOutput;
 
-    inline void setInputPointers( Tensor* logits, const Tensor* labels ); // relies on the input tensor not changing
+    void setInputPointers( Tensor* logits, const Tensor* labels ) { this->logits = logits, this->labels = labels; } 
     inline void checkDimensions( Tensor& logits, const Tensor& labels );
+};
+
+
+class MSEloss {
+public:
+
+    MSEloss() {};
+
+    dtype operator()( Tensor& outputs, const Tensor& labels );
+    void backward();
+
+private:
+
+    const Tensor* labels = nullptr;
+    Tensor* outputs = nullptr;
+    
+    void setInputPointers( Tensor* outputs, const Tensor* labels ) { this->outputs = outputs, this->labels = labels; } 
+    inline void checkDimensions( Tensor& outputs, const Tensor& labels );
 };
 
 } // namespace mygrad
