@@ -37,8 +37,24 @@ private:
     const Tensor* labels = nullptr;
     Tensor* outputs = nullptr;
     
-    void setInputPointers( Tensor* outputs, const Tensor* labels ) { this->outputs = outputs, this->labels = labels; } 
+    void setInputPointers( Tensor* outputs, const Tensor* labels ) { this->outputs = outputs, this->labels = labels; }
     inline void checkDimensions( Tensor& outputs, const Tensor& labels );
+};
+
+
+class KLdivWithStandardNormal {
+public:
+
+    KLdivWithStandardNormal() {};
+
+    dtype operator()( Tensor& distribution );
+    void backward();
+
+private:
+
+    Tensor* distribution;
+
+    void setInputPointers( Tensor* distribution ) { this->distribution = distribution; }
 };
 
 } // namespace mygrad

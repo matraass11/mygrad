@@ -14,7 +14,7 @@ static std::random_device dev;
 static std::mt19937 generator(dev());
 
 std::vector<dtype> normDistVector(size_t length, dtype standardDeviation = 1) {
-    std::normal_distribution<double> normDist{0, standardDeviation};
+    std::normal_distribution<dtype> normDist{0, standardDeviation};
     std::vector<dtype> v(length);
     for (size_t i = 0; i < length; i++) {
         v[i] = normDist(generator);

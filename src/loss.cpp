@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <numeric>
 #include <functional>
+#include <cmath>
 
 #include "mygrad/loss.hpp"
 #include "mygrad/helper.hpp"
@@ -91,6 +92,43 @@ void MSEloss::backward() {
     }
 
     setInputPointers( nullptr, nullptr );
+}
+
+
+dtype KLdivWithStandardNormal::operator()( Tensor& distribution ) {
+    setInputPointers( &distribution );
+
+    #ifndef NDEBUG
+        if (distribution.dimensions[0] % 2 != 0 or distribution.dimensions.size() != 2) 
+            throw std::runtime_error("dimensions of distribution should be of size 2 and have n rows for means and n rows for logvariance");
+    #endif
+
+    dtype loss = 0;
+    const size_t offsetBetweenMeanAndLogvar = distribution.dimensions[0] / 2 * distribution.strides[0];
+    for (size_t i = 0; i < offsetBetweenMeanAndLogvar; i++) {
+        dtype mean = distribution.data[i], logvar = distribution.data[i + offsetBetweenMeanAndLogvar];
+        loss += 1 + logvar - std::pow(mean, 2) - std::exp(logvar);
+    }
+
+    loss /= -2; // the math shorthand part
+    loss /= (distribution.dimensions[0] / 2); // the normalization part. hence the redundancy is left for clarity
+    return loss;
+}
+
+void KLdivWithStandardNormal::backward() {
+    #ifndef NDEBUG
+        if (!(distribution)) throw std::runtime_error("backward before forward impossible");
+    #endif
+
+    const dtype divisor = -2 * static_cast<dtype>(distribution->dimensions[0] / 2);
+    const size_t offsetBetweenMeanAndLogvar = distribution->dimensions[0] / 2 * distribution->strides[0];
+    for (size_t i = 0; i < offsetBetweenMeanAndLogvar; i++) {
+        dtype mean = distribution->data[i], logvar = distribution->data[i + offsetBetweenMeanAndLogvar];
+        distribution->grads[i] += (-2 * mean) / divisor;
+        distribution->grads[i + offsetBetweenMeanAndLogvar] += (1 - std::exp(logvar)) / divisor;
+    }
+
+    setInputPointers( nullptr );
 }
 
 } // namespace mygrad
