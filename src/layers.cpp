@@ -481,5 +481,49 @@ void MaxPool2d::manageDimensions( const Tensor& inputTensor ) {
 }
 
 
+void Reparameterize::manageDimensions( const Tensor& inputTensor ) {
+    #ifndef NDEBUG
+        if (inputTensor.dimensions[0] % 2 != 0 or inputTensor.dimensions.size() != 2) 
+            throw std::runtime_error("dimensions of distribution should be of size 2 and have n rows for means and n rows for logvariance");
+    #endif
+
+    TensorDims neededOutDims = {inputTensor.dimensions[0] / 2, inputTensor.dimensions[1]};
+    if (outputTensor.dimensions != neededOutDims) {
+        adjustOutTensorDimensions(neededOutDims);
+        currentEpsilons = Tensor::zeros(neededOutDims);
+    }
+}
+
+void Reparameterize::forward( Tensor& inputTensor ) {
+     
+    manageDimensions( inputTensor );
+    setInputTensorPointer( &inputTensor );
+
+    const size_t offsetBetweenMeanAndLogvar = outputTensor.length;
+    for (size_t i = 0; i < outputTensor.length; i++) {
+        dtype mean = inputTensor.data[i], std = std::exp(inputTensor.data[i + offsetBetweenMeanAndLogvar] / 2);
+        std::cout << "mean: " << mean << ", std: " << std << "\n";
+
+        dtype epsilon = normDist(generator);
+        currentEpsilons.data[i] = epsilon;
+        outputTensor.data[i] = mean + epsilon * std;
+    }
+}
+
+void Reparameterize::backward() {
+    if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+
+    Tensor& inputTensor = *currentInputTensor;
+
+    const size_t offsetBetweenMeanAndLogvar = outputTensor.length;
+    for (size_t i = 0; i < outputTensor.length; i++) {
+        dtype gradPassedDown = outputTensor.grads[i];
+        inputTensor.grads[i] += 1 * gradPassedDown;
+        dtype std = std::exp(inputTensor.data[i + offsetBetweenMeanAndLogvar] / 2); 
+        inputTensor.grads[i + offsetBetweenMeanAndLogvar] += 0.5 * std * currentEpsilons.data[i] * gradPassedDown;
+    }
+    
+    setInputTensorPointer( nullptr );
+}
 
 } // namespace mygrad

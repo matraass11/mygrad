@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <optional>
+#include <random>
 #include "tensor.hpp" 
 #include "helper.hpp"
 
@@ -121,6 +122,26 @@ struct MaxPool2d : Layer {
 private:
     dtype pool(size_t pictureIndex, size_t filterIndex, size_t inputRow, size_t inputCol) const;
     void poolBackward(size_t pictureIndex, size_t channelIndex, size_t inputRow, size_t inputCol, dtype gradPassedDown);
+
+    inline void manageDimensions( const Tensor& inputTensor ) override;
+};
+
+
+struct Reparameterize : Layer {
+
+    Reparameterize() : generator(std::random_device()()), currentEpsilons(Tensor::zeros({1})) {};
+
+    void forward( Tensor& inputTensor ) override;
+    void backward() override;
+
+    std::vector<Tensor*> parameterTensors() override { return {}; }
+    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
+
+private:
+    Tensor currentEpsilons; // for backprop
+    // std::random_device dev;
+    std::mt19937 generator;
+    std::normal_distribution<dtype> normDist {0, 1};
 
     inline void manageDimensions( const Tensor& inputTensor ) override;
 };
