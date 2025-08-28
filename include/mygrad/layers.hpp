@@ -22,6 +22,7 @@ struct Layer {
     virtual std::vector<Tensor*> parameterTensors()    = 0;
     virtual std::vector<Tensor*> nonParameterTensors() = 0;
 
+    Tensor& operator()( Tensor& inputTensor ) { forward(inputTensor); return outputTensor; };
     void zeroGrad();
     
 protected:
