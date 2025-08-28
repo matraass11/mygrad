@@ -6,9 +6,9 @@
 #include "processData.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb/image.h"
+#include "../stb/image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb/image_write.h"
+#include "../stb/image_write.h"
 
 #include "mygrad/mygrad.hpp"
 
@@ -57,7 +57,7 @@ void convertTensorToPng(const Tensor& imgTensor, size_t index, const std::string
 }
 
 
-static Tensor tensorWithImageData(const std::vector<size_t>& indices) {
+static Tensor tensorWithCatData(const std::vector<size_t>& indices) {
     const size_t expectedSize = 64, expectedChannels = 3;
     Tensor dataTensor = Tensor::zeros( {indices.size(), expectedChannels, expectedSize, expectedSize});
 
@@ -86,7 +86,7 @@ static Tensor tensorWithImageData(const std::vector<size_t>& indices) {
                     for (size_t row = 0; row < rows; row++) {
                         for (size_t col = 0; col < columns; col++) {
                             size_t locInData = row*columns*channels + col*channels + channel;
-                            dataTensor.at({i, channel, row, col}) = data[locInData];
+                            dataTensor.at({i, channel, row, col}) = data[locInData] / 255.0; // NORMALIZED DATA
                         } 
                     }
                 }
@@ -116,9 +116,9 @@ Dataset loadCatImages(float trainSplit, float evalSplit, float testSplit) {
     std::vector<size_t> indices = shuffledIndices(length);
     
     return Dataset ( 
-        tensorWithImageData(slicedIndices(indices, 0, trainBoundary - 1)),  
-        tensorWithImageData(slicedIndices(indices, trainBoundary, evalBoundary - 1)),
-        tensorWithImageData(slicedIndices(indices, evalBoundary, length - 1))
+        tensorWithCatData(slicedIndices(indices, 0, trainBoundary - 1)),  
+        tensorWithCatData(slicedIndices(indices, trainBoundary, evalBoundary - 1)),
+        tensorWithCatData(slicedIndices(indices, evalBoundary, length - 1))
     );
 
 }
