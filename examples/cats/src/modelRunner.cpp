@@ -14,7 +14,13 @@ static const size_t latent = 64;
 
 void trainModel() {
 
-    Dataset images = loadCatImages(0.8, 0.1, 0.1); // the data is already normalized
+    Dataset images = loadCatImages(0.9, 0.1, 0);
+    convertTensorToPng(images.train, 100, "../test.png");
+
+    for (size_t i = 0; i < images.train.length; i++) {
+        images.train.data[i] /= 255.0; 
+    }
+
 
 
     Model encoder {
@@ -68,6 +74,7 @@ void trainModel() {
             if (batch % 5 == 0) {
                 std::cout << "batch - " << batch << ", loss - " << loss << "\n";
             }
+            // if (batch == 80) break;
 
             avgLoss += loss;
 
