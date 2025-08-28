@@ -8,7 +8,7 @@
 using namespace mygrad;
 
 static const size_t pixelsInImage = 64 * 64 * 3;
-static const size_t neurons = 1024;
+static const size_t neurons = 512;
 static const size_t latent = 64;
 
 
@@ -40,7 +40,7 @@ void trainModel() {
     std::vector<Tensor*> parameters = encoder.parameters;
 
     parameters.insert( parameters.end(), decoder.parameters.begin(), decoder.parameters.end() );
-    Adam optim(parameters, 0.00001);
+    Adam optim(parameters, 0.000001);
 
     KLdivWithStandardNormal kldiv;
     MSEloss mse;
@@ -73,12 +73,12 @@ void trainModel() {
 
 
             encoder.zeroGrad(), reparam.outputTensor.zeroGrad(), decoder.zeroGrad();
-            // mse.backward();
+            mse.backward();
             kldiv.backward();
             decoder.backward();
-            reparam.outputTensor.printGrad();
+            // reparam.outputTensor.printGrad();
+            // break;
             // decoder.layers[1].outputTensor.printGrad();
-            break;
             reparam.backward();
             encoder.backward();
 
@@ -90,8 +90,8 @@ void trainModel() {
         avgLoss /= (trainSize / batchSize);
     }
 
-    encoder.save("../encoder");
-    decoder.save("../decoder");
+    encoder.save("../encoder.model");
+    decoder.save("../decoder.model");
 }
 
 void generateImages() {
@@ -104,7 +104,7 @@ void generateImages() {
         Sigmoid()
     };
 
-    decoder.load("../decoder");
+    decoder.load("../decoder.model");
 
     const size_t amountOfImages = 10;
     Tensor normDistWithLogVariance = Tensor::zeros({amountOfImages, latent * 2});
@@ -118,7 +118,7 @@ void generateImages() {
     Tensor& images = reshaper.outputTensor;
 
     for (size_t i = 0; i < images.dimensions[0]; i++) {
-        convertTensorToPng(images, i, std::string("../cat_" + std::to_string(i) + ".png"));
+        convertTensorToPng(images, i, std::string("../newCats/cat_" + std::to_string(i) + ".png"));
     }
     
 }
