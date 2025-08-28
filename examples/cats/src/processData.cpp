@@ -86,7 +86,7 @@ static Tensor tensorWithCatData(const std::vector<size_t>& indices) {
                     for (size_t row = 0; row < rows; row++) {
                         for (size_t col = 0; col < columns; col++) {
                             size_t locInData = row*columns*channels + col*channels + channel;
-                            dataTensor.at({i, channel, row, col}) = data[locInData] / 255.0; // NORMALIZED DATA
+                            dataTensor.at({i, channel, row, col}) = data[locInData];
                         } 
                     }
                 }
