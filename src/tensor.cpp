@@ -55,7 +55,7 @@ void Tensor::print() const {
 }
 
 void Tensor::printGrad() const {
-    if (dimensions.size() > 2) {
+    if (dimensions.size() > 1) {
         printRecursively(0, 0, true, true);
     }
     else {
