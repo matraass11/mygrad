@@ -54,8 +54,6 @@ private:
         }
     };
 
-    // LayersContainer layers; SHOULD BE PRIVATE
-
     const std::vector<Tensor*> parametersOfLayers(LayersContainer& layers);
     const std::vector<Tensor*> nonParametersOfLayers(LayersContainer& layers);
 
