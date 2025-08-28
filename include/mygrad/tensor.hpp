@@ -25,6 +25,12 @@ struct Tensor {
     Tensor( const std::vector<dtype>& dataVector,
             const TensorDims& dimensions );
 
+    Tensor(const Tensor&) = delete;            // no copy
+    Tensor& operator=(const Tensor&) = delete; // no copy
+
+    Tensor(Tensor&&) = default;                // allow move
+    Tensor& operator=(Tensor&&) = default;     // allow move
+
 private:
     Tensor( const TensorDims& dimensions );
 public:
