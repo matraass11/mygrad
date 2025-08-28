@@ -122,6 +122,8 @@ void LinearLayer::matmulWithBias() {
 
     const size_t threads_n = ThreadPool::size();
     const size_t chunkSize = std::ceil( (double) outputTensor.dimensions[0] / threads_n);
+    // std::cout << outputTensor.dimensions << "are the dimensions of the output\n";
+    // std::cout << chunkSize << " is the chunk size\n";
 
     for (size_t t=0; t < threads_n; t++) {
         size_t startRow = chunkSize * t, endRow = std::min(startRow+chunkSize, outputTensor.dimensions[0]); 
@@ -131,7 +133,7 @@ void LinearLayer::matmulWithBias() {
                     for (size_t weightRow=0; weightRow < outputTensor.dimensions[1]; weightRow++) {
                         outputTensor.at({inputRow, weightRow}) = std::transform_reduce( 
                             &currentInputTensor->at({inputRow, 0}), 
-                            &currentInputTensor->at({inputRow, currentInputTensor->dimensions[1] - 1}),
+                            &currentInputTensor->at({inputRow, currentInputTensor->dimensions[1]}),
                             &weights.at({weightRow, 0}),
                             biases.at({0, weightRow})
                         ); // dot product
@@ -166,11 +168,43 @@ void ReLU::backward() {
     #endif
 
     for (size_t i = 0; i < currentInputTensor->length; i++) {
-        currentInputTensor->grads[i] = (currentInputTensor->data[i] >= 0 ? outputTensor.grads[i] : 0);
+        currentInputTensor->grads[i] += (currentInputTensor->data[i] >= 0 ? outputTensor.grads[i] : 0);
     }
 
     setInputTensorPointer(nullptr);
 }
+
+void Sigmoid::manageDimensions( const Tensor& inputTensor ) {
+    if (inputTensor.dimensions != outputTensor.dimensions ) {
+        adjustOutTensorDimensions(inputTensor.dimensions);
+    } 
+}
+
+
+void Sigmoid::forward( Tensor& inputTensor ) {
+    manageDimensions( inputTensor );
+    setInputTensorPointer( &inputTensor );
+
+    for (size_t i = 0; i < inputTensor.length; i++) {
+        outputTensor.data[i] = 1 / (1 + std::exp( -inputTensor.data[i]) );
+    }
+}
+
+void Sigmoid::backward() {
+    #ifndef NDEBUG
+        if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    #endif
+
+    Tensor& inputTensor = *currentInputTensor;
+
+    for (size_t i = 0; i < inputTensor.length; i++) {
+        dtype negexp = std::exp(-inputTensor.data[i]);
+        inputTensor.grads[i] += (negexp / ((1 + negexp) * (1 + negexp)) ) * outputTensor.grads[i];
+    }
+
+    setInputTensorPointer(nullptr);
+}
+
 
 Conv2d::Conv2d( size_t inChannels, size_t outChannels, size_t kernelSize, size_t stride, size_t paddingSize ) : 
         inChannels(inChannels), outChannels(outChannels), kernelSize(kernelSize), stride(stride), paddingSize(paddingSize),
@@ -483,11 +517,11 @@ void MaxPool2d::manageDimensions( const Tensor& inputTensor ) {
 
 void Reparameterize::manageDimensions( const Tensor& inputTensor ) {
     #ifndef NDEBUG
-        if (inputTensor.dimensions[0] % 2 != 0 or inputTensor.dimensions.size() != 2) 
-            throw std::runtime_error("dimensions of distribution should be of size 2 and have n rows for means and n rows for logvariance");
+        if (inputTensor.dimensions[1] % 2 != 0 or inputTensor.dimensions.size() != 2) 
+            throw std::runtime_error("dimensions of distribution should be of size 2 and have n columns for means and n columns for logvariance");
     #endif
 
-    TensorDims neededOutDims = {inputTensor.dimensions[0] / 2, inputTensor.dimensions[1]};
+    TensorDims neededOutDims = {inputTensor.dimensions[0], inputTensor.dimensions[1] / 2};
     if (outputTensor.dimensions != neededOutDims) {
         adjustOutTensorDimensions(neededOutDims);
         currentEpsilons = Tensor::zeros(neededOutDims);
@@ -499,10 +533,8 @@ void Reparameterize::forward( Tensor& inputTensor ) {
     manageDimensions( inputTensor );
     setInputTensorPointer( &inputTensor );
 
-    const size_t offsetBetweenMeanAndLogvar = outputTensor.length;
-    for (size_t i = 0; i < outputTensor.length; i++) {
-        dtype mean = inputTensor.data[i], std = std::exp(inputTensor.data[i + offsetBetweenMeanAndLogvar] / 2);
-        std::cout << "mean: " << mean << ", std: " << std << "\n";
+    for (size_t i = 0; i < inputTensor.length; i += 2) {
+        dtype mean = inputTensor.data[i], std = std::exp(inputTensor.data[i + 1] / 2);
 
         dtype epsilon = normDist(generator);
         currentEpsilons.data[i] = epsilon;
@@ -515,12 +547,14 @@ void Reparameterize::backward() {
 
     Tensor& inputTensor = *currentInputTensor;
 
-    const size_t offsetBetweenMeanAndLogvar = outputTensor.length;
-    for (size_t i = 0; i < outputTensor.length; i++) {
-        dtype gradPassedDown = outputTensor.grads[i];
+    for (size_t i = 0; i < inputTensor.length; i += 2) {
+        dtype gradPassedDown = outputTensor.grads[i / 2];
+
+        // std::cout << "gradPassedDown in reparam at i/2 = " << i/2 << ": " << outputTensor.grads[i / 2] << "\n";
+
         inputTensor.grads[i] += 1 * gradPassedDown;
-        dtype std = std::exp(inputTensor.data[i + offsetBetweenMeanAndLogvar] / 2); 
-        inputTensor.grads[i + offsetBetweenMeanAndLogvar] += 0.5 * std * currentEpsilons.data[i] * gradPassedDown;
+        dtype std = std::exp(inputTensor.data[i + 1] / 2); 
+        inputTensor.grads[i + 1] += 0.5 * std * currentEpsilons.data[i] * gradPassedDown;
     }
     
     setInputTensorPointer( nullptr );
