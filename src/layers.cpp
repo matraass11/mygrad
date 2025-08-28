@@ -537,8 +537,8 @@ void Reparameterize::forward( Tensor& inputTensor ) {
         dtype mean = inputTensor.data[i], std = std::exp(inputTensor.data[i + 1] / 2);
 
         dtype epsilon = normDist(generator);
-        currentEpsilons.data[i] = epsilon;
-        outputTensor.data[i] = mean + epsilon * std;
+        currentEpsilons.data[i / 2] = epsilon;
+        outputTensor.data[i / 2] = mean + epsilon * std;
     }
 }
 
@@ -554,7 +554,7 @@ void Reparameterize::backward() {
 
         inputTensor.grads[i] += 1 * gradPassedDown;
         dtype std = std::exp(inputTensor.data[i + 1] / 2); 
-        inputTensor.grads[i + 1] += 0.5 * std * currentEpsilons.data[i] * gradPassedDown;
+        inputTensor.grads[i + 1] += 0.5 * std * currentEpsilons.data[i / 2] * gradPassedDown;
     }
     
     setInputTensorPointer( nullptr );
