@@ -14,5 +14,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../ mygrad_build EXCLUDE_FROM_AL
 
 add_executable(cats
     main.cpp 
-    processData.cpp )
+    src/processData.cpp
+    src/modelRunner.cpp )
 target_link_libraries(cats PRIVATE mygrad)
