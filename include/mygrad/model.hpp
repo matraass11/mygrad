@@ -54,12 +54,14 @@ private:
         }
     };
 
-    LayersContainer layers;
+    // LayersContainer layers; SHOULD BE PRIVATE
 
     const std::vector<Tensor*> parametersOfLayers(LayersContainer& layers);
     const std::vector<Tensor*> nonParametersOfLayers(LayersContainer& layers);
 
 public:
+
+    LayersContainer layers;
     const std::vector<Tensor*> parameters;
     const std::vector<Tensor*> nonParameters;
 };
