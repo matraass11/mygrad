@@ -150,7 +150,7 @@ struct Reparameterize : Layer {
     void backward() override;
 
     std::vector<Tensor*> parameterTensors() override { return {}; }
-    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
+    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor, &currentEpsilons }; }
 
 private:
     Tensor currentEpsilons; // for backprop
