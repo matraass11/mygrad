@@ -99,19 +99,18 @@ dtype KLdivWithStandardNormal::operator()( Tensor& distribution ) {
     setInputPointers( &distribution );
 
     #ifndef NDEBUG
-        if (distribution.dimensions[0] % 2 != 0 or distribution.dimensions.size() != 2) 
+        if (distribution.dimensions[1] % 2 != 0 or distribution.dimensions.size() != 2) 
             throw std::runtime_error("dimensions of distribution should be of size 2 and have n rows for means and n rows for logvariance");
     #endif
 
     dtype loss = 0;
-    const size_t offsetBetweenMeanAndLogvar = distribution.dimensions[0] / 2 * distribution.strides[0];
-    for (size_t i = 0; i < offsetBetweenMeanAndLogvar; i++) {
-        dtype mean = distribution.data[i], logvar = distribution.data[i + offsetBetweenMeanAndLogvar];
+    for (size_t i = 0; i < distribution.length; i+=2) {
+        dtype mean = distribution.data[i], logvar = distribution.data[i + 1];
         loss += 1 + logvar - std::pow(mean, 2) - std::exp(logvar);
     }
 
     loss /= -2; // the math shorthand part
-    loss /= (distribution.dimensions[0] / 2); // the normalization part. hence the redundancy is left for clarity
+    loss /= (distribution.dimensions[0]); // the normalization part. hence the redundancy is left for clarity // no longer relevant if this works
     return loss;
 }
 
@@ -121,11 +120,10 @@ void KLdivWithStandardNormal::backward() {
     #endif
 
     const dtype divisor = -2 * static_cast<dtype>(distribution->dimensions[0] / 2);
-    const size_t offsetBetweenMeanAndLogvar = distribution->dimensions[0] / 2 * distribution->strides[0];
-    for (size_t i = 0; i < offsetBetweenMeanAndLogvar; i++) {
-        dtype mean = distribution->data[i], logvar = distribution->data[i + offsetBetweenMeanAndLogvar];
+    for (size_t i = 0; i < distribution->length; i+=2) {
+        dtype mean = distribution->data[i], logvar = distribution->data[i + 1];
         distribution->grads[i] += (-2 * mean) / divisor;
-        distribution->grads[i + offsetBetweenMeanAndLogvar] += (1 - std::exp(logvar)) / divisor;
+        distribution->grads[i + 1] += (1 - std::exp(logvar)) / divisor;
     }
 
     setInputPointers( nullptr );

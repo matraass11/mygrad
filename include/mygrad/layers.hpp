@@ -53,7 +53,22 @@ private:
 
 struct ReLU : Layer {
 
-    ReLU() : Layer() {};
+    ReLU() {};
+
+    void forward( Tensor& inputTensor ) override;
+    void backward() override;
+    std::vector<Tensor*> parameterTensors() override { return {}; }
+    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
+
+private:
+    inline void manageDimensions( const Tensor& inputTensor ) override;
+
+};
+
+
+struct Sigmoid : Layer {
+
+    Sigmoid() {};
 
     void forward( Tensor& inputTensor ) override;
     void backward() override;
@@ -93,7 +108,7 @@ struct Reshape : Layer {
     TensorDims newDimensions;
     std::optional<size_t> freeDimension;
     
-    Reshape( const TensorDims& newDimensions, std::optional<size_t> freeDimension );
+    Reshape( const TensorDims& newDimensions, std::optional<size_t> freeDimension = {} );
     
     void forward( Tensor& inputTensor ) override;
     void backward() override;
