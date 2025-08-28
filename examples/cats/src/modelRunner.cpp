@@ -8,17 +8,14 @@
 using namespace mygrad;
 
 static const size_t pixelsInImage = 64 * 64 * 3;
-static const size_t neurons = 512;
-static const size_t latent = 64;
+static const size_t neurons = 1024;
+static const size_t latent = 128;
 
 
-void trainModel() {
+void trainModel( Tensor& trainingImages ) {
 
-    Dataset images = loadCatImages(0.9, 0.1, 0);
-    convertTensorToPng(images.train, 100, "../test.png");
-
-    for (size_t i = 0; i < images.train.length; i++) {
-        images.train.data[i] /= 255.0; 
+    for (size_t i = 0; i < trainingImages.length; i++) {
+        trainingImages.data[i] /= 255.0; 
     }
 
 
@@ -27,9 +24,11 @@ void trainModel() {
         Reshape({1, pixelsInImage}, 0),
         LinearLayer(pixelsInImage, neurons),
         ReLU(),
-        LinearLayer(neurons, latent * 2), // first 20 columns of output are the means, second 20 columns are the logvariances. 
+        LinearLayer(neurons, latent), // first 20 columns of output are the means, second 20 columns are the logvariances. 
         // reparameterize simply interprets it that way 
         // and outputs a tensor with values sampled from the distributions of shape [batchSize x latent]
+
+        ReLU(),
     };
 
     Reparameterize reparam;
@@ -46,16 +45,16 @@ void trainModel() {
     std::vector<Tensor*> parameters = encoder.parameters;
 
     parameters.insert( parameters.end(), decoder.parameters.begin(), decoder.parameters.end() );
-    Adam optim(parameters, 0.000001);
+    Adam optim(parameters, 0.0001);
 
     KLdivWithStandardNormal kldiv;
     MSEloss mse;
 
-    const size_t epochs = 1;
+    const size_t epochs = 2;
     const size_t batchSize = 64;
 
     for (size_t epoch = 0; epoch < epochs; epoch++) {
-        Tensor& data = images.train;
+        Tensor& data = trainingImages;
         const size_t trainSize = data.dimensions[0];
 
         const std::vector<size_t> indices = shuffledIndices(trainSize);
@@ -65,11 +64,14 @@ void trainModel() {
             Tensor batchInputs = retrieveBatchFromData(data, batchIndices);
 
             
-            Tensor& latentDistribution = encoder(batchInputs); 
-            reparam.forward(latentDistribution);
-            Tensor& outputs = decoder(reparam.outputTensor);
+            // Tensor& latentDistribution = encoder(batchInputs); 
+            // reparam.forward(latentDistribution);
+            // Tensor& outputs = decoder(reparam.outputTensor);
+            // dtype loss = kldiv(latentDistribution) + mse(outputs, batchInputs); // order is important
 
-            dtype loss = kldiv(latentDistribution) + mse(outputs, batchInputs); // order is important
+
+            Tensor& outputs = decoder(encoder(batchInputs));
+            dtype loss = mse(outputs, batchInputs);
 
             if (batch % 5 == 0) {
                 std::cout << "batch - " << batch << ", loss - " << loss << "\n";
@@ -79,19 +81,14 @@ void trainModel() {
             avgLoss += loss;
 
 
-            encoder.zeroGrad(), reparam.outputTensor.zeroGrad(), decoder.zeroGrad();
-            mse.backward();
-            kldiv.backward();
-            decoder.backward();
-            // reparam.outputTensor.printGrad();
-            // break;
-            // decoder.layers[1].outputTensor.printGrad();
-            reparam.backward();
-            encoder.backward();
+            // encoder.zeroGrad(), reparam.outputTensor.zeroGrad(), decoder.zeroGrad();
+            // mse.backward(), kldiv.backward();
+            // decoder.backward(), reparam.backward(), encoder.backward();
+
+            encoder.zeroGrad(), decoder.zeroGrad();
+            mse.backward(), decoder.backward(), encoder.backward();
 
             optim.step();
-
-            // if (batch == 3) break;
 
         }
         avgLoss /= (trainSize / batchSize);
@@ -99,7 +96,53 @@ void trainModel() {
 
     encoder.save("../encoder.model");
     decoder.save("../decoder.model");
+
+
 }
+
+void testModel( Tensor& testImages ) {
+
+
+    Model encoder {
+        Reshape({1, pixelsInImage}, 0),
+        LinearLayer(pixelsInImage, neurons),
+        ReLU(),
+        LinearLayer(neurons, latent), 
+        ReLU()
+    };
+
+    Model decoder {
+        LinearLayer(latent, neurons),
+        ReLU(),
+        LinearLayer(neurons, pixelsInImage),
+        Sigmoid()
+    };
+
+    encoder.load("../encoder.model");
+    decoder.load("../decoder.model");
+
+    const std::vector<size_t> indices = shuffledIndices(testImages.dimensions[0]);
+    Tensor testBatch = retrieveBatchFromData(testImages, indices);
+    Tensor normalizedTestBatch = Tensor::zeros(testBatch.dimensions);
+
+    for (size_t i = 0; i < testBatch.length; i++) {
+        normalizedTestBatch.data[i] = testBatch.data[i] / 255.0;
+    }
+
+    Tensor& output = decoder(encoder(normalizedTestBatch));
+    Reshape reshaper({1, 3, 64, 64}, 0);
+    Tensor& reconstructedImages = reshaper(output);
+
+    for (size_t i = 0; i < reconstructedImages.length; i++) {
+        reconstructedImages.data[i] *= 255;
+    }
+
+    for (size_t i = 0; i < 10; i++) {
+        convertTensorToPng(testBatch, i, "../test/orig_" + std::to_string(i) + ".png");
+        convertTensorToPng(reconstructedImages, i, "../test/reconstructed_" + std::to_string(i) + ".png");
+    }
+}
+
 
 void generateImages() {
     Reparameterize reparam;
@@ -131,12 +174,14 @@ void generateImages() {
 }
 
 
-// void testModel(Model& model) {
-//     std::filesystem::path path = std::filesystem::current_path();
+void testModel(Model& model) {
 
-//     Tensor testImages = loadMnistImages(path / "../dataset/test-images-ubyte");
-//     Tensor testLabels = loadMnistLabels(path / "../dataset/test-labels-ubyte");
-//     Tensor standartizedTestImages = standartize(testImages);
+    Model decoder {
+        LinearLayer(latent, neurons),
+        ReLU(),
+        LinearLayer(neurons, pixelsInImage),
+        Sigmoid()
+    };
 
-//     std::cout << "test accuracy: " << test(model, standartizedTestImages, testLabels, 1024) << std::endl;
-// }
+    decoder.load("../decoder.model");
+}
