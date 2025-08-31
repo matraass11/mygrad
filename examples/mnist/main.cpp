@@ -15,29 +15,31 @@ using namespace mygrad;
 
 int main(int argc, char* argv[]) {
 
-    Conv2d testConv(2, 2, 3, 2, 1);
-    testConv.kernels = Tensor(std::vector<dtype>(testConv.kernels.length, 1), testConv.kernels.dimensions);
-    Tensor input( {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}, {1, 2, 3, 3});
+    // Conv2d testConv(2, 2, 3, 2, 1);
+    // Tensor input( {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}, {1, 2, 3, 3});
 
-    // testConv.currentInputTensor = &input;
-    // testConv.im2col(input, testConv.matrixFormCurrentInput);
-    // std::cout << testConv.matrixFormCurrentInput.dimensions;
-    // testConv.matrixFormCurrentInput.print();
-
-    // Tensor im2colImplResult = Tensor(
-    //     std::vector<dtype>(testConv.outputTensor.data.get(),
-    //                        testConv.outputTensor.data.get() + testConv.outputTensor.length), 
-    //     testConv.outputTensor.dimensions);
+    Conv2d testConv(1, 3, 3, 1);
+    std::vector<dtype> inputData(32);
+    std::iota(inputData.begin(), inputData.end(), 0);
+    Tensor input( inputData, {2, 1, 4, 4});
+    
+    // testConv.kernels = Tensor(std::vector<dtype>(testConv.kernels.length, 1), testConv.kernels.dimensions);
 
     Tensor& currentResult = testConv.outputTensor;
-    testConv.forwardWithIm2col(input);
-    std::cout << "the new result:\n";
-    testConv.outputTensor.print();
-    std::cout << "\n\n";
+
+    testConv.forward2(input);
+    testConv.matrixFormCurrentInput.print();
+
+
+    // std::cout << "the new result:\n";
+    // testConv.outputTensor.print();
+
+    // std::cout << "\n\n";
     
-    testConv(input);
-    std::cout << "the old result:\n";
-    currentResult.print();
+    // testConv.forward1(input);
+
+    // std::cout << "the old result:\n";
+    // currentResult.print();
 
 
 
