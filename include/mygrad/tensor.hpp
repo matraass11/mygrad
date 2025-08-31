@@ -30,6 +30,7 @@ struct Tensor {
 
     Tensor(Tensor&&) = default;                // allow move
     Tensor& operator=(Tensor&&) = default;     // allow move
+    bool operator==(const Tensor&) const = default;
 
 private:
     Tensor( const TensorDims& dimensions );
@@ -55,7 +56,6 @@ public:
     }
 
     void zeroGrad() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
-    void zeroData() { std::memset(grads.get(), 0, length*sizeof(dtype)); }
 
 
     static TensorStrides stridesFromDimensions(const TensorDims& dimensions);
