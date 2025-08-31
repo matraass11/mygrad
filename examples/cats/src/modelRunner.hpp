@@ -2,6 +2,5 @@
 
 #include "mygrad/mygrad.hpp"
 
-void trainModel( mygrad::Tensor& trainingImages );
-void testModel( mygrad::Tensor& testImages);
-void generateImages();
+void trainModel( mygrad::Model& encoder, mygrad::Model& decoder, mygrad::Tensor& trainingImages );
+void testModel( mygrad::Model& encoder, mygrad::Model& decoder, mygrad::Tensor& testImages, const std::string& dirForImages );
