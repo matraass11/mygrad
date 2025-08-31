@@ -23,23 +23,23 @@ int main(int argc, char* argv[]) {
     std::iota(inputData.begin(), inputData.end(), 0);
     Tensor input( inputData, {2, 1, 4, 4});
     
-    // testConv.kernels = Tensor(std::vector<dtype>(testConv.kernels.length, 1), testConv.kernels.dimensions);
+    testConv.kernels = Tensor(std::vector<dtype>(testConv.kernels.length, 1), testConv.kernels.dimensions);
 
     Tensor& currentResult = testConv.outputTensor;
 
     testConv.forward2(input);
-    testConv.matrixFormCurrentInput.print();
+    // testConv.matrixFormCurrentInput.print();
 
 
-    // std::cout << "the new result:\n";
-    // testConv.outputTensor.print();
+    std::cout << "the new result:\n";
+    testConv.outputTensor.print();
 
-    // std::cout << "\n\n";
+    std::cout << "\n\n";
     
-    // testConv.forward1(input);
+    testConv.forward1(input);
 
-    // std::cout << "the old result:\n";
-    // currentResult.print();
+    std::cout << "the old result:\n";
+    currentResult.print();
 
 
 
