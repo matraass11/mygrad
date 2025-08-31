@@ -18,36 +18,58 @@ void Conv2d::print() {
 }
 
 void Conv2d::forwardWithIm2col(Tensor& inputTensor) {
-    manageDimensions( inputTensor );
+
+    if (inputTensor.dimensions.size() != 4) throw std::runtime_error("input tensor dimensionality must be four for Conv2d");
+
+    TensorDims neededOutTensorDims = { inputTensor.dimensions[0],
+                                       outChannels,
+                                       convolvedSize(inputTensor.dimensions[2]),
+                                       convolvedSize(inputTensor.dimensions[3]) };
+
+    if (outputTensor.dimensions != neededOutTensorDims) {
+        adjustOutTensorDimensions(neededOutTensorDims);
+    }
     setInputTensorPointer( &inputTensor );
 
+    
+    im2col(inputTensor, matrixFormCurrentInput);
+    kernels.reshape( {outChannels, static_cast<size_t>(kernels.strides[0])} ); // the second term should be equal to matrixFormColumns
+    outputTensor.reshape( {matrixFormCurrentInput.dimensions[0], kernels.dimensions[0]} );
 
     const size_t threads_n = ThreadPool::size();
-    const size_t chunkSize = std::ceil( (double) inputTensor.dimensions[0] / threads_n);
+    const size_t chunkSize = std::ceil( (double) kernels.dimensions[0] / threads_n);
 
     for (size_t t=0; t < threads_n; t++) {
-        size_t startPicture = chunkSize * t, endPicture = std::min(startPicture+chunkSize, outputTensor.dimensions[0]); 
-        ThreadPool::push([this, &inputTensor, startPicture, endPicture] {
+        size_t startFilter = chunkSize * t, endFilter = std::min(startFilter+chunkSize, kernels.dimensions[0]); 
+        if (startFilter == endFilter) break;
+        ThreadPool::push(
+            [this, startFilter, endFilter] {
+                size_t locInOut = startFilter * outputTensor.dimensions[0]; 
+                
+                // im2col inherently changes the layout of the input tensor. this is reflected in how we multiply the matrixForm and kernels matrices
+                // instead of doing the classic matrix multiplication, we distribute the results grouped by the filter (output channel).
+                // this allows us to later simply reshape the output tensor so that the groups come out to just be different channels
+                
+                for (size_t filterRow=startFilter; filterRow < endFilter; filterRow++) {
+                    for (size_t inputRow=0; inputRow < outputTensor.dimensions[0]; inputRow++) {
+                        outputTensor.data[locInOut] = std::transform_reduce( 
+                            &matrixFormCurrentInput.data[inputRow * matrixFormCurrentInput.dimensions[1]], 
+                            &matrixFormCurrentInput.data[(inputRow + 1) * matrixFormCurrentInput.dimensions[1]],
+                            &kernels.at({filterRow, 0}),
+                            biases.at({filterRow})
+                        ); // dot product
 
-            size_t locInOutput = startPicture * outputTensor.strides[0];
-
-            for (size_t picture = startPicture; picture < endPicture; picture++) {
-                for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
-                    for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(inputTensor.dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
-
-                        for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
-                        
-                            outputTensor.data[locInOutput] = convolve(picture, channelOut, row, column);
-                            // std::cout << outputTensor.data[locInOutput] << ", ";
-                            locInOutput++;
-                        }
+                        locInOut++;   // walking the output channel group
                     }
                 }
             }
-        });
+        );
     }
 
     ThreadPool::waitUntilDone();
+
+    outputTensor.reshape(neededOutTensorDims);
+    kernels.reshape( {outChannels, inChannels, kernelSize, kernelSize});
 }
 
 
@@ -79,17 +101,18 @@ void Conv2d::movePatchToMatrixForm( size_t picture, int leftUpperRow, int leftUp
 
 
 void Conv2d::im2col( const Tensor& inputTensor, Tensor& matrixFormTensor ) {
+
+    manageDimensions(inputTensor); // not sure about where to actually do this but for testing this will be here
+
     const size_t matrixFormColumns = kernelSize * kernelSize * inChannels;
-    const size_t matrixFormRows = outputTensor.length; // assuming manageDimensions has already taken place
-    TensorDims neededMatrixFormDims = {matrixFormRows, matrixFormColumns};
+    // const size_t matrixFormRows = outputTensor.dimensions[2]; // assuming manageDimensions has already taken place
+    const size_t matrixFormRowsForSinglePicture = convolvedSize(inputTensor.dimensions[2]) * convolvedSize(inputTensor.dimensions[3]); 
+    TensorDims neededMatrixFormDims = {matrixFormRowsForSinglePicture * inputTensor.dimensions[0], matrixFormColumns};
 
     if (matrixFormTensor.dimensions != neededMatrixFormDims) {
-        matrixFormTensor = Tensor::zeros( {matrixFormRows, matrixFormColumns} );
+        matrixFormTensor = Tensor::zeros( neededMatrixFormDims );
     } 
-    else { std::fill(matrixFormTensor.data[0], matrixFormTensor.data[0] + matrixFormTensor.length, 0 ); } // instead of reassignment to avoid an unnecessary memory allocation
-
-
-    kernels.reshape( {outChannels, static_cast<size_t>(kernels.strides[0]) }); // the second term should be equal to matrixFormColumns
+    else { std::fill(matrixFormTensor.data.get(), matrixFormTensor.data.get() + matrixFormTensor.length, 0 ); } // instead of reassignment to avoid an unnecessary memory allocation
 
 
     const size_t threads_n = ThreadPool::size();
@@ -97,20 +120,18 @@ void Conv2d::im2col( const Tensor& inputTensor, Tensor& matrixFormTensor ) {
 
     for (size_t t=0; t < threads_n; t++) {
         size_t startPicture = chunkSize * t, endPicture = std::min(startPicture+chunkSize, outputTensor.dimensions[0]); 
-        ThreadPool::push([this, &inputTensor, &matrixFormTensor, startPicture, endPicture] {
+        ThreadPool::push([this, &inputTensor, &matrixFormTensor, matrixFormRowsForSinglePicture, startPicture, endPicture] {
 
-            size_t rowInMatrixForm = startPicture * outputTensor.strides[0];
+            size_t rowInMatrixForm = startPicture * matrixFormRowsForSinglePicture;
 
             for (size_t picture = startPicture; picture < endPicture; picture++) {
-                for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
-                    for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(inputTensor.dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
+                for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(inputTensor.dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
 
-                        for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
-                        
-                            movePatchToMatrixForm(picture, row, column, matrixFormTensor, rowInMatrixForm); // is this line right?
-                            // std::cout << outputTensor.data[locInOutput] << ", ";
-                            rowInMatrixForm++;
-                        }
+                    for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
+                    
+                        movePatchToMatrixForm(picture, row, column, matrixFormTensor, rowInMatrixForm); // is this line right?
+                        // std::cout << outputTensor.data[locInOutput] << ", ";
+                        rowInMatrixForm++;
                     }
                 }
             }

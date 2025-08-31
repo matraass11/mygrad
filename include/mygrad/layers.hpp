@@ -26,9 +26,9 @@ struct Layer {
     void zeroGrad();
     
 protected:
-    inline void setInputTensorPointer( Tensor* inputTensor ); // relies on the input tensor not changing
+    void setInputTensorPointer( Tensor* inputTensor ); // relies on the input tensor not changing
     virtual void manageDimensions( const Tensor& inputTensor ) = 0; 
-    inline void adjustOutTensorDimensions( const TensorDims& newDimensions );
+    void adjustOutTensorDimensions( const TensorDims& newDimensions );
 };
 
 
