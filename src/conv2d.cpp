@@ -17,7 +17,7 @@ void Conv2d::print() {
             << kernelSize << ", stride: " << stride << ", padding size: " << paddingSize << "\n";
 }
 
-void Conv2d::forwardWithIm2col(Tensor& inputTensor) {
+void Conv2d::forward2(Tensor& inputTensor) {
 
     if (inputTensor.dimensions.size() != 4) throw std::runtime_error("input tensor dimensionality must be four for Conv2d");
 
@@ -34,6 +34,7 @@ void Conv2d::forwardWithIm2col(Tensor& inputTensor) {
     
     im2col(inputTensor, matrixFormCurrentInput);
     kernels.reshape( {outChannels, static_cast<size_t>(kernels.strides[0])} ); // the second term should be equal to matrixFormColumns
+    std::cout << "dimensions of kernels: " << kernels.dimensions;
     outputTensor.reshape( {matrixFormCurrentInput.dimensions[0], kernels.dimensions[0]} );
 
     const size_t threads_n = ThreadPool::size();
@@ -108,6 +109,7 @@ void Conv2d::im2col( const Tensor& inputTensor, Tensor& matrixFormTensor ) {
     // const size_t matrixFormRows = outputTensor.dimensions[2]; // assuming manageDimensions has already taken place
     const size_t matrixFormRowsForSinglePicture = convolvedSize(inputTensor.dimensions[2]) * convolvedSize(inputTensor.dimensions[3]); 
     TensorDims neededMatrixFormDims = {matrixFormRowsForSinglePicture * inputTensor.dimensions[0], matrixFormColumns};
+    std::cout << "dimensions needed for matrix form: " << neededMatrixFormDims;
 
     if (matrixFormTensor.dimensions != neededMatrixFormDims) {
         matrixFormTensor = Tensor::zeros( neededMatrixFormDims );
@@ -175,7 +177,7 @@ dtype Conv2d::convolve(size_t pictureIndex, size_t outChannel, int inputRow, int
 }
 
 
-void Conv2d::forward(Tensor& inputTensor) {
+void Conv2d::forward1(Tensor& inputTensor) {
     manageDimensions( inputTensor );
     setInputTensorPointer( &inputTensor );
 

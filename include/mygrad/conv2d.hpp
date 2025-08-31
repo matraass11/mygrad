@@ -13,8 +13,14 @@ struct Conv2d : Layer {
 
     void print();
 
-    void forward( Tensor& inputTensor ) override;
-    void forwardWithIm2col( Tensor& inputTensor );
+    void forward( Tensor& inputTensor ) override {
+        // forward2(inputTensor);
+        forward1(inputTensor);
+    }
+
+    void forward1( Tensor& inputTensor );
+    void forward2( Tensor& inputTensor );
+
     void backward() override;
     std::vector<Tensor*> parameterTensors() override { return { &kernels, &biases }; }
     std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
