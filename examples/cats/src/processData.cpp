@@ -6,9 +6,9 @@
 #include "processData.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../stb/image.h"
+#include "../external/stb/image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../stb/image_write.h"
+#include "../external/stb/image_write.h"
 
 #include "mygrad/mygrad.hpp"
 
