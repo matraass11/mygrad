@@ -34,8 +34,6 @@ void Conv2d::forward2(Tensor& inputTensor) {
     
     im2col(inputTensor, matrixFormCurrentInput);
     kernels.reshape( {outChannels, static_cast<size_t>(kernels.strides[0])} ); // the second term should be equal to matrixFormColumns
-    // std::cout << "dimensions of kernels: " << kernels.dimensions;
-    outputTensor.reshape( {kernels.dimensions[0], matrixFormCurrentInput.dimensions[0]} );
 
     const size_t threads_n = ThreadPool::size();
     const size_t chunkSize = std::ceil( (double) kernels.dimensions[0] / threads_n);
@@ -47,8 +45,13 @@ void Conv2d::forward2(Tensor& inputTensor) {
             [this, startFilter, endFilter] {
 
                 for (size_t filterRow=startFilter; filterRow < endFilter; filterRow++) {
-                    for (size_t inputRow=0; inputRow < outputTensor.dimensions[1]; inputRow++) {
-                        outputTensor.at({filterRow, inputRow}) = std::transform_reduce( 
+                    for (size_t inputRow=0; inputRow < matrixFormCurrentInput.dimensions[0]; inputRow++) {
+
+                        size_t inputImage = inputRow / outputTensor.strides[1];
+                        size_t outputRow = (inputRow % outputTensor.strides[1]) / outputTensor.strides[2];
+                        size_t outputCol = inputRow % outputTensor.strides[2];
+                        outputTensor.at({inputImage, filterRow, outputRow, outputCol})
+                        = std::transform_reduce( 
                             &matrixFormCurrentInput.data[inputRow * matrixFormCurrentInput.dimensions[1]], 
                             &matrixFormCurrentInput.data[(inputRow + 1) * matrixFormCurrentInput.dimensions[1]],
                             &kernels.at({filterRow, 0}),
@@ -62,7 +65,7 @@ void Conv2d::forward2(Tensor& inputTensor) {
 
     ThreadPool::waitUntilDone();
 
-    outputTensor.reshape(neededOutTensorDims);
+    // outputTensor.reshape(neededOutTensorDims);
     kernels.reshape( {outChannels, inChannels, kernelSize, kernelSize});
 }
 
@@ -125,7 +128,6 @@ void Conv2d::im2col( const Tensor& inputTensor, Tensor& matrixFormTensor ) {
                     for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
                     
                         movePatchToMatrixForm(picture, row, column, matrixFormTensor, rowInMatrixForm); // is this line right?
-                        // std::cout << outputTensor.data[locInOutput] << ", ";
                         rowInMatrixForm++;
                     }
                 }
