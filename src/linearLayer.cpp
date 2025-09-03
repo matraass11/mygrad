@@ -71,11 +71,16 @@ void LinearLayer::backward() {
                             
                             currentInputTensor->grads[inputRow*inpTensorColumns + dotProductIterator] +=
                                 weights.data[weightRow*weightColumns + dotProductIterator] * currentGradPassedDown;
+                        }
+
+                        for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
 
                             weights.grads[weightRow*weightColumns + dotProductIterator] += 
                                 currentInputTensor->data[inputRow*inpTensorColumns + dotProductIterator] * currentGradPassedDown; 
-                            }
+                        }
 
+                        // turns out doing two loops and distributing the grads separately is slightly faster than doing one loop and everything at once. cool
+                        
                         biases.grads[weightRow] += currentGradPassedDown;
                     }
                 }
