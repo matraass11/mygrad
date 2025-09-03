@@ -17,8 +17,6 @@ struct LinearLayer : Layer {
     std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
     
 private:
-    void matmulWithBias();
-    void matmulWithBiasBackward();
 
     void manageDimensions( const Tensor& inputTensor ) override; 
 };
