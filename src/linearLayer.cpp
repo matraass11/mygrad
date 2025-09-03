@@ -56,29 +56,27 @@ void LinearLayer::backward() {
 
     const size_t threads_n = ThreadPool::size();
     const size_t rowChunkSize = std::ceil(outputTensor.dimensions[0] / (double) threads_n);
-    const size_t colChunkSize = std::ceil(outputTensor.dimensions[1] / (double) threads_n);
     for (size_t t=0; t < threads_n; t++) {
         size_t startRow = rowChunkSize * t, endRow = std::min(startRow+rowChunkSize, outputTensor.dimensions[0]); 
-        size_t startCol = colChunkSize * t, endCol = std::min(startCol+colChunkSize, outputTensor.dimensions[1]); 
         ThreadPool::push(
 
-            [this, startRow, endRow, startCol, endCol] () {
+            [this, startRow, endRow] () {
                 const size_t inpTensorColumns = currentInputTensor->dimensions[1];
                 const size_t weightColumns = weights.dimensions[1];
 
-                for (size_t row = startRow; row < endRow; row++){
-                    for (size_t column=startCol; column < endCol; column++) {
-                        dtype currentGradPassedDown = outputTensor.gradAt({row, column});
+                for (size_t inputRow=startRow; inputRow < endRow; inputRow++) {
+                    for (size_t weightRow=0; weightRow < outputTensor.dimensions[1]; weightRow++) {
+                        dtype currentGradPassedDown = outputTensor.gradAt({inputRow, weightRow});
                         for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
                             
-                            currentInputTensor->grads[row*inpTensorColumns + dotProductIterator] +=
-                                weights.data[column*weightColumns + dotProductIterator] * currentGradPassedDown;
+                            currentInputTensor->grads[inputRow*inpTensorColumns + dotProductIterator] +=
+                                weights.data[weightRow*weightColumns + dotProductIterator] * currentGradPassedDown;
 
-                            weights.grads[column*weightColumns + dotProductIterator] += 
-                                currentInputTensor->data[row*inpTensorColumns + dotProductIterator] * currentGradPassedDown; 
+                            weights.grads[weightRow*weightColumns + dotProductIterator] += 
+                                currentInputTensor->data[inputRow*inpTensorColumns + dotProductIterator] * currentGradPassedDown; 
                             }
 
-                        biases.grads[column] += currentGradPassedDown;
+                        biases.grads[weightRow] += currentGradPassedDown;
                     }
                 }
             });
