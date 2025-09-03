@@ -3,6 +3,7 @@
 #include <array>
 #include <string>
 #include <algorithm>
+#include <iostream>
 #include <initializer_list>
 
 namespace mygrad {

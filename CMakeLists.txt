@@ -7,8 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library(mygrad STATIC
+    src/conv2d.cpp
     src/helper.cpp
     src/layers.cpp
+    src/linearLayer.cpp
     src/loss.cpp
     src/model.cpp
     src/optim.cpp
