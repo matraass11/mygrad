@@ -20,80 +20,11 @@ LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures) : // default in
 
 
 void LinearLayer::forward( Tensor& inputTensor ) {
-    
     manageDimensions(inputTensor); 
     setInputTensorPointer( &inputTensor );
-    matmulWithBias();
-}
-
-void LinearLayer::backward() {
-    matmulWithBiasBackward();
-    setInputTensorPointer( nullptr );
-}
-
-void LinearLayer::matmulWithBiasBackward() {
-    #ifndef NDEBUG
-        if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
-    #endif
 
     const size_t threads_n = ThreadPool::size();
-    const size_t chunkSize = std::ceil(outputTensor.dimensions[0] / (double) threads_n);
-    for (size_t t=0; t < threads_n; t++) {
-        size_t startRow = chunkSize * t, endRow = std::min(startRow+chunkSize, outputTensor.dimensions[0]); 
-        ThreadPool::push(
-
-            [this, startRow, endRow] () {
-                const size_t inpTensorColumns = currentInputTensor->dimensions[1];
-                const size_t weightColumns = weights.dimensions[1];
-
-                for (size_t row = startRow; row < endRow; row++){
-                    for (size_t column=0; column < outputTensor.dimensions[1]; column++) {
-                        dtype currentGradPassedDown = outputTensor.gradAt({row, column});
-                        for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
-                            
-                            currentInputTensor->grads[row*inpTensorColumns + dotProductIterator] +=
-                                weights.data[column*weightColumns + dotProductIterator] * currentGradPassedDown;
-
-                            weights.grads[column*weightColumns + dotProductIterator] += 
-                                currentInputTensor->data[row*inpTensorColumns + dotProductIterator] * currentGradPassedDown; 
-                            }
-
-                        biases.grads[column] += currentGradPassedDown;
-                    }
-                }
-            });
-    }
-
-    ThreadPool::waitUntilDone();
-
-}
-
-void LinearLayer::manageDimensions(const Tensor& inputTensor) {
-    if (
-        inputTensor.dimensions.size() != 2
-    ) {
-        std::cout << inputTensor.dimensions;
-        throw std::runtime_error("dimensionality for linear layer input tensor must be 2. dimensions received are printed above");
-    }
-
-    if (
-        inputTensor.dimensions[1] != weights.dimensions[1]
-    ) {
-        std::cout << inputTensor.dimensions[1] << " != " << weights.dimensions[1] << "\n";
-        throw std::runtime_error("input tensor columns don't match weight tensor rows in linear layer. mismatch printed above");
-    }
-
-    if (
-        inputTensor.dimensions[0] != outputTensor.dimensions[0] or weights.dimensions[0] != outputTensor.dimensions[1]
-    ) {
-        adjustOutTensorDimensions( {inputTensor.dimensions[0], weights.dimensions[0]} );
-    }
-}
-
-void LinearLayer::matmulWithBias() {
-
-    const size_t threads_n = ThreadPool::size();
-    const size_t chunkSize = std::ceil( (double) outputTensor.dimensions[0] / threads_n);
+    const size_t chunkSize = std::ceil( (double) outputTensor.dimensions[0] / threads_n );
     // std::cout << outputTensor.dimensions << "are the dimensions of the output\n";
     // std::cout << chunkSize << " is the chunk size\n";
 
@@ -116,7 +47,68 @@ void LinearLayer::matmulWithBias() {
     }
 
     ThreadPool::waitUntilDone();
+}
 
+void LinearLayer::backward() {
+    #ifndef NDEBUG
+        if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    #endif
+
+    const size_t threads_n = ThreadPool::size();
+    const size_t rowChunkSize = std::ceil(outputTensor.dimensions[0] / (double) threads_n);
+    const size_t colChunkSize = std::ceil(outputTensor.dimensions[1] / (double) threads_n);
+    for (size_t t=0; t < threads_n; t++) {
+        size_t startRow = rowChunkSize * t, endRow = std::min(startRow+rowChunkSize, outputTensor.dimensions[0]); 
+        size_t startCol = colChunkSize * t, endCol = std::min(startCol+colChunkSize, outputTensor.dimensions[1]); 
+        ThreadPool::push(
+
+            [this, startRow, endRow, startCol, endCol] () {
+                const size_t inpTensorColumns = currentInputTensor->dimensions[1];
+                const size_t weightColumns = weights.dimensions[1];
+
+                for (size_t row = startRow; row < endRow; row++){
+                    for (size_t column=startCol; column < endCol; column++) {
+                        dtype currentGradPassedDown = outputTensor.gradAt({row, column});
+                        for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
+                            
+                            currentInputTensor->grads[row*inpTensorColumns + dotProductIterator] +=
+                                weights.data[column*weightColumns + dotProductIterator] * currentGradPassedDown;
+
+                            weights.grads[column*weightColumns + dotProductIterator] += 
+                                currentInputTensor->data[row*inpTensorColumns + dotProductIterator] * currentGradPassedDown; 
+                            }
+
+                        biases.grads[column] += currentGradPassedDown;
+                    }
+                }
+            });
+    }
+
+    ThreadPool::waitUntilDone();
+
+    setInputTensorPointer( nullptr );
+}
+
+void LinearLayer::manageDimensions(const Tensor& inputTensor) {
+    if (
+        inputTensor.dimensions.size() != 2
+    ) {
+        std::cout << inputTensor.dimensions;
+        throw std::runtime_error("dimensionality for linear layer input tensor must be 2. dimensions received are printed above");
+    }
+
+    if (
+        inputTensor.dimensions[1] != weights.dimensions[1]
+    ) {
+        std::cout << inputTensor.dimensions[1] << " != " << weights.dimensions[1] << "\n";
+        throw std::runtime_error("input tensor columns don't match weight tensor rows in linear layer. mismatch printed above");
+    }
+
+    if (
+        inputTensor.dimensions[0] != outputTensor.dimensions[0] or weights.dimensions[0] != outputTensor.dimensions[1]
+    ) {
+        adjustOutTensorDimensions( {inputTensor.dimensions[0], weights.dimensions[0]} );
+    }
 }
 
 } // namespace mygrad
