@@ -26,29 +26,9 @@ struct Layer {
     void zeroGrad();
     
 protected:
-    inline void setInputTensorPointer( Tensor* inputTensor ); // relies on the input tensor not changing
+    void setInputTensorPointer( Tensor* inputTensor ); // relies on the input tensor not changing
     virtual void manageDimensions( const Tensor& inputTensor ) = 0; 
-    inline void adjustOutTensorDimensions( const TensorDims& newDimensions );
-};
-
-
-struct LinearLayer : Layer {
-
-    Tensor weights;
-    Tensor biases;
-    
-    LinearLayer( size_t inFeatures, size_t outFeatures);
-    LinearLayer( size_t inFeatures, size_t outFeatures, const std::vector<dtype>& data);
-    void forward( Tensor& inputTensor ) override;
-    void backward() override;
-    std::vector<Tensor*> parameterTensors() override { return { &weights, &biases }; }
-    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
-    
-private:
-    void matmulWithBias();
-    void matmulWithBiasBackward();
-
-    void manageDimensions( const Tensor& inputTensor ) override; 
+    void adjustOutTensorDimensions( const TensorDims& newDimensions );
 };
 
 
@@ -79,28 +59,6 @@ struct Sigmoid : Layer {
 private:
     inline void manageDimensions( const Tensor& inputTensor ) override;
 
-};
-
-
-struct Conv2d : Layer {
-    const size_t inChannels, outChannels, kernelSize, stride, paddingSize;
-    Tensor kernels;
-    Tensor biases;
-
-    Conv2d( size_t inChannels, size_t outChannels, size_t kernelSize, size_t stride, size_t paddingSize = 0 );
-
-    void print();
-
-    void forward( Tensor& inputTensor ) override;
-    void backward() override;
-    std::vector<Tensor*> parameterTensors() override { return { &kernels, &biases }; }
-    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
-
-private:
-    dtype convolve(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol) const;
-    void convolveBackward(size_t pictureIndex, size_t filterIndex, int inputRow, int inputCol, dtype gradPassedDown);
-
-    inline void manageDimensions( const Tensor& inputTensor ) override;
 };
 
 
