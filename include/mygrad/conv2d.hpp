@@ -20,6 +20,8 @@ struct Conv2d : Layer {
     std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
 
 private:
+    std::vector<std::mutex> kernelMutexes;
+
     Tensor matrixFormInput;
 
     void im2col( const Tensor& inputTensor );
