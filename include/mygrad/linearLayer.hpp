@@ -1,5 +1,6 @@
 #pragma once 
 
+#include <mutex>
 #include "layers.hpp"
 
 namespace mygrad {
@@ -18,6 +19,7 @@ struct LinearLayer : Layer {
     
 private:
 
+    std::vector<std::mutex> weightRowMutexes;
     void manageDimensions( const Tensor& inputTensor ) override; 
 };
 
