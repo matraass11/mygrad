@@ -11,7 +11,8 @@ LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures,
                           const std::vector<dtype>& data ) :
     weights( data, { outFeatures, inFeatures } ), // the tensor is transposed for matrix multiplication to work nicely.
                                                  // each outFeatures row has InFeatures weights. 
-    biases( std::vector<dtype>(outFeatures, 0), {1, outFeatures} ) {}
+    biases( std::vector<dtype>(outFeatures, 0), {1, outFeatures} ),
+    weightRowMutexes(outFeatures) {}
     
 
 LinearLayer::LinearLayer( size_t inFeatures, size_t outFeatures) : // default init
@@ -73,10 +74,13 @@ void LinearLayer::backward() {
                                 weights.data[weightRow*weightColumns + dotProductIterator] * currentGradPassedDown;
                         }
 
-                        for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
-
-                            weights.grads[weightRow*weightColumns + dotProductIterator] += 
-                                currentInputTensor->data[inputRow*inpTensorColumns + dotProductIterator] * currentGradPassedDown; 
+                        {
+                            std::lock_guard lock(weightRowMutexes[weightRow]);
+                            for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
+    
+                                weights.grads[weightRow*weightColumns + dotProductIterator] += 
+                                    currentInputTensor->data[inputRow*inpTensorColumns + dotProductIterator] * currentGradPassedDown; 
+                            }
                         }
 
                         // turns out doing two loops and distributing the grads separately is slightly faster than doing one loop and everything at once. cool
