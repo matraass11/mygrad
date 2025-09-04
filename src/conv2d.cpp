@@ -9,7 +9,8 @@ Conv2d::Conv2d( size_t inChannels, size_t outChannels, size_t kernelSize, size_t
         kernels( KaimingWeightsVector(kernelSize*kernelSize*inChannels, outChannels),
                  { outChannels, inChannels, kernelSize, kernelSize } ),
         biases( std::vector<dtype>(outChannels, 0), {outChannels} ),
-        matrixFormInput(Tensor::zeros({1})) {}
+        matrixFormInput(Tensor::zeros({1})),
+        kernelMutexes(outChannels) {}
 
 
 void Conv2d::print() {
@@ -110,7 +111,7 @@ void Conv2d::im2col( const Tensor& inputTensor ) {
             for (size_t picture = startPicture; picture < endPicture; picture++) {
                 for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(inputTensor.dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
 
-                    for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
+                    for (int column = -static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
                     
                         movePatchToMatrixForm(picture, row, column, matrixFormInput, rowInMatrixForm); // is this line right?
                         rowInMatrixForm++;
@@ -125,6 +126,7 @@ void Conv2d::im2col( const Tensor& inputTensor ) {
 
 
 void Conv2d::convolveBackward(size_t pictureIndex, size_t outChannel, int inputRow, int inputCol, dtype gradPassedDown) {
+    std::lock_guard lock(kernelMutexes[outChannel]);
 
     biases.gradAt( {outChannel} ) += gradPassedDown;
     Tensor& input = *currentInputTensor;
@@ -163,15 +165,16 @@ void Conv2d::backward() {
 
     for (size_t t=0; t < threads_n; t++) {
         size_t startPicture = chunkSize * t, endPicture = std::min(startPicture+chunkSize, outputTensor.dimensions[0]); 
+        if (startPicture == endPicture) break;
         ThreadPool::push([this, &inputTensor, startPicture, endPicture] {
 
             size_t locInOutput = startPicture * outputTensor.strides[0];
 
             for (size_t picture = startPicture; picture < endPicture; picture++) {
                 for (size_t channelOut = 0; channelOut < outChannels; channelOut++) {
-                    for (int row = -static_cast<int>(paddingSize) ; row < static_cast<int>(inputTensor.dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
+                    for (int row = -static_cast<int>(paddingSize); row < static_cast<int>(inputTensor.dimensions[2] + paddingSize - kernelSize + 1); row += stride) {
 
-                        for (int column = - static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
+                        for (int column = -static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
                         
                             dtype gradPassedDown = outputTensor.grads[locInOutput];
                             convolveBackward(picture, channelOut, row, column, gradPassedDown);
