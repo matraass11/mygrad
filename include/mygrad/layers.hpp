@@ -81,6 +81,23 @@ private:
 };
 
 
+struct Upsample : Layer {
+    const size_t scalingFactor;
+    
+    Upsample( size_t scalingFactor ) : scalingFactor(scalingFactor) {};
+    
+    void forward( Tensor& inputTensor ) override;
+    void backward() override;
+    
+    std::vector<Tensor*> parameterTensors() override { return {}; }
+    std::vector<Tensor*> nonParameterTensors() override { return { &outputTensor }; }
+    
+private:
+
+    inline void manageDimensions( const Tensor& inputTensor ) override;
+};
+
+
 struct MaxPool2d : Layer {
 
     const size_t kernelSize;
