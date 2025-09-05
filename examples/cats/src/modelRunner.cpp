@@ -18,15 +18,20 @@ void trainModel( Model& encoder, Model& decoder, Tensor& trainingImages ) {
     std::vector<Tensor*> parameters = encoder.parameters;
     parameters.insert( parameters.end(), decoder.parameters.begin(), decoder.parameters.end() );
 
-    Adam optim(parameters, 0.0001);
+    Adam optim(parameters, 0.001);
 
-    KLdivWithStandardNormal kldiv;
+    // KLdivWithStandardNormal kldiv;
     MSEloss mse;
 
-    const size_t epochs = 2;
+    const size_t epochs = 50;
     const size_t batchSize = 64;
 
     for (size_t epoch = 0; epoch < epochs; epoch++) {
+
+        if (epoch == 10) optim.learningRate /= 10;
+
+        else if (epoch == 30) optim.learningRate /= 2;
+
         Tensor& data = trainingImages;
         const size_t trainSize = data.dimensions[0];
 
@@ -38,7 +43,7 @@ void trainModel( Model& encoder, Model& decoder, Tensor& trainingImages ) {
             Tensor& outputs = decoder(encoder(batchInputs));
             dtype loss = mse(outputs, batchInputs);
 
-            if (batch % 5 == 0) {
+            if (batch % 25 == 0) {
                 printf("%s%u%s%.4f\n", "batch - ", batch, ", loss - ", loss);
             }
 
@@ -48,6 +53,8 @@ void trainModel( Model& encoder, Model& decoder, Tensor& trainingImages ) {
             optim.step();
 
         }
+        encoder.save("../encoder.model");
+        decoder.save("../decoder.model");
     }
 
 
@@ -55,7 +62,9 @@ void trainModel( Model& encoder, Model& decoder, Tensor& trainingImages ) {
 
 void testModel( Model& encoder, Model& decoder, Tensor& testImages, const std::string& dirForImages) {
 
-    const std::vector<size_t> indices = shuffledIndices(testImages.dimensions[0]);
+    const std::vector<size_t> allShuffledIndices = shuffledIndices(testImages.dimensions[0]);
+    const std::vector<size_t> indices = slicedIndices(allShuffledIndices, 0, 10);
+
     Tensor testBatch = retrieveBatchFromData(testImages, indices);
     Tensor normalizedTestBatch = Tensor::zeros(testBatch.dimensions);
 

@@ -18,10 +18,10 @@ public:
 
     void step();
     
+    dtype learningRate;
 
 private:
 
-    dtype learningRate;
     dtype beta1, beta2;
     dtype epsilon;
     dtype weightDecay;
