@@ -7,7 +7,7 @@
 
 namespace mygrad {
 
-std::vector<dtype> normDistVector(size_t length);
+std::vector<dtype> normDistVector(size_t length, dtype standardDeviation = 1);
 std::vector<dtype> KaimingWeightsVector(size_t inFeatures, size_t outFeatures);
 
 Tensor retrieveBatchFromData(const Tensor& dataTensor, const std::vector<size_t>& indices);
