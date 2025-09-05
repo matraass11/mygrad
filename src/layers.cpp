@@ -93,6 +93,59 @@ void Sigmoid::backward() {
 }
 
 
+void Upsample::manageDimensions( const Tensor& inputTensor ) {
+
+    if (inputTensor.dimensions.size() != 4) {
+        std::cerr << inputTensor.dimensions;
+        throw std::runtime_error("Upsample expects a 4d tensor, dimensions received are printed above");
+    }
+
+    TensorDims neededOutDims = inputTensor.dimensions;
+    neededOutDims[2] *= scalingFactor, neededOutDims[3] *= scalingFactor; 
+
+    if (outputTensor.dimensions != neededOutDims) adjustOutTensorDimensions(neededOutDims);
+}
+
+
+void Upsample::forward( Tensor& inputTensor ) {
+    manageDimensions(inputTensor);
+    setInputTensorPointer(&inputTensor);
+
+    for (size_t image = 0; image < inputTensor.dimensions[0]; image++) {
+        for (size_t channel = 0; channel < inputTensor.dimensions[1]; channel++) {
+            for (size_t row = 0; row < outputTensor.dimensions[2]; row++) {
+                for (size_t col = 0; col < outputTensor.dimensions[3]; col++) {
+                    outputTensor.at({image, channel, row, col}) = 
+                        inputTensor.at({image, channel, row / scalingFactor, col / scalingFactor});
+                }
+            }
+        }
+    }
+    // outputTensor.data[i] = inputTensor.data[i / scalingFactor];
+}
+
+
+void Upsample::backward() {
+        
+    #ifndef NDEBUG
+        if (!(currentInputTensor)) throw std::runtime_error("backward before forward impossible");
+    #endif
+
+    for (size_t image = 0; image < currentInputTensor->dimensions[0]; image++) {
+        for (size_t channel = 0; channel < currentInputTensor->dimensions[1]; channel++) {
+            for (size_t row = 0; row < outputTensor.dimensions[2]; row++) {
+                for (size_t col = 0; col < outputTensor.dimensions[3]; col++) {
+                    currentInputTensor->gradAt({image, channel, row / scalingFactor, col / scalingFactor}) 
+                        += outputTensor.gradAt({image, channel, row, col});
+                }
+            }
+        }
+    }
+
+    setInputTensorPointer(nullptr);
+}
+
+
 Reshape::Reshape( const TensorDims& newDimensions, std::optional<size_t> freeDimension ) : 
     newDimensions(newDimensions), freeDimension(freeDimension)
     { adjustOutTensorDimensions(newDimensions); }

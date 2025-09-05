@@ -1,6 +1,7 @@
 #pragma once
 
 #include "layers.hpp"
+#include <mutex>
 
 namespace mygrad {
 
