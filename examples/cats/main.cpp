@@ -88,6 +88,8 @@ int main(int argc, char* argv[]) {
         decoder.load("../decoder.model");
         testModel(encoder, decoder, images.test, "../testImages");
         std::cout << "test images have been saved to 'cats/testImages/'\n";
+        generateImages(encoder, decoder, latent, "../newCats");
+        std::cout << "new images have been saved to 'cats/newCats/'\n";
 
     } else {
         std::cerr << "Invalid mode: " << mode << "\n";
