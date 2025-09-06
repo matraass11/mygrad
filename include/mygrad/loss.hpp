@@ -3,6 +3,8 @@
 #include "tensor.hpp"
 #include "types.hpp"
 
+#include <string>
+
 namespace mygrad {
 
 class CrossEntropyLoss {
@@ -27,7 +29,12 @@ private:
 class MSEloss {
 public:
 
-    MSEloss() {};
+    const std::string reduction; // reduction = sum will divide by batch size. reduction = mean will divide by entire size of input
+
+    MSEloss( const std::string& reduction) : reduction(reduction) {
+        std::cout << "reduction is " << reduction << "\n";
+        if (reduction != std::string("sum") and reduction != std::string("mean")) throw std::runtime_error("reduction for MSEloss must be one of: 'sum', 'mean'");
+    };
 
     dtype operator()( Tensor& outputs, const Tensor& labels );
     void backward();
@@ -47,10 +54,12 @@ public:
 
     KLdivWithStandardNormal() {};
 
-    dtype operator()( Tensor& distribution );
+    dtype operator()( Tensor& distribution, dtype beta );
     void backward();
 
 private:
+
+    dtype currentBeta;
 
     Tensor* distribution;
 
