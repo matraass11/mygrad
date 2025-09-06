@@ -22,27 +22,9 @@ int main(int argc, char* argv[]) {
     Dataset images = loadCatImages(0.9, 0.1);
 
     const size_t pixelsInImage = 64 * 64 * 3;
-    const size_t neurons = 1024;
-    const size_t latent = 256;
+    const size_t latent = 128;
 
     const size_t imageSizeBeforeLatent = 256*4*4;
-
-    // Model encoder {
-    //     Reshape({1, pixelsInImage}, 0),
-    //     LinearLayer(pixelsInImage, neurons),
-    //     ReLU(),
-    //     LinearLayer(neurons, latent),
-    //     ReLU()
-    // };
-
-
-    // Model decoder {
-    //     LinearLayer(latent, neurons),
-    //     ReLU(),
-    //     LinearLayer(neurons, pixelsInImage),
-    //     Sigmoid()
-    // };
-
 
     Model encoder {
         Conv2d(3, 32, 3, 2, 1), // B x 32 x 32 x 32
@@ -54,23 +36,16 @@ int main(int argc, char* argv[]) {
         Conv2d(128, 256, 3, 2, 1), // B x 256 x 4 x 4
         ReLU(),
         Reshape({1, imageSizeBeforeLatent}, 0),
-        LinearLayer(imageSizeBeforeLatent, latent)
+        LinearLayer(imageSizeBeforeLatent, latent * 2)
     };
 
     Model decoder {
         LinearLayer(latent, imageSizeBeforeLatent),
         Reshape({1, 256, 4, 4}, 0),
-        Upsample(2),
-        Conv2d(256, 128, 3, 1, 1),
-        ReLU(),
-        Upsample(2),
-        Conv2d(128, 64, 3, 1, 1),
-        ReLU(),
-        Upsample(2),
-        Conv2d(64, 32, 3, 1, 1),
-        ReLU(),
-        Upsample(2),
-        Conv2d(32, 3, 3, 1, 1),
+        Upsample(2), Conv2d(256, 128, 3, 1, 1), ReLU(),
+        Upsample(2), Conv2d(128, 64, 3, 1, 1), ReLU(),
+        Upsample(2), Conv2d(64, 32, 3, 1, 1), ReLU(),
+        Upsample(2), Conv2d(32, 3, 3, 1, 1),
         Sigmoid()
     };
 
@@ -78,7 +53,7 @@ int main(int argc, char* argv[]) {
 
     if (mode == "train") {
 
-        trainModel(encoder, decoder, images.train);
+        trainModel(encoder, decoder, images);
         encoder.save("../encoder.model");
         decoder.save("../decoder.model");
 
@@ -86,7 +61,7 @@ int main(int argc, char* argv[]) {
 
         encoder.load("../encoder.model");
         decoder.load("../decoder.model");
-        testModel(encoder, decoder, images.test, "../testImages");
+        reconstructImages(encoder, decoder, images.eval, "../testImages");
         std::cout << "test images have been saved to 'cats/testImages/'\n";
         generateImages(encoder, decoder, latent, "../newCats");
         std::cout << "new images have been saved to 'cats/newCats/'\n";
