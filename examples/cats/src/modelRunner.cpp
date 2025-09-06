@@ -37,22 +37,31 @@ void trainModel( Model& encoder, Model& decoder, Dataset& dataset ) {
     MSEloss mse("sum");
 
     const size_t epochs = 50;
+    const size_t trainingPatience = 10, LRpatience=5;
     const size_t trainBatchSize = 64, evalBatchSize = 512;
+
+    dtype currentEvalLoss;
+    size_t epochsWithoutImprovement = 0;
 
     for (size_t epoch = 0; epoch < epochs; epoch++) {
 
-        if (epoch == 10) optim.learningRate /= 10;
+        if (epochsWithoutImprovement > trainingPatience) break;
 
-        else if (epoch == 30) optim.learningRate /= 2;
+        else if (epochsWithoutImprovement > LRpatience) optim.learningRate /= 10;
 
-        // trainForOneEpoch(encoder, decoder, reparam, dataset.train, trainBatchSize, epoch, optim, mse, kldiv);
+        trainForOneEpoch(encoder, decoder, reparam, dataset.train, trainBatchSize, epoch, optim, mse, kldiv);
         auto [msevalue, kldivvalue] = validateModel(encoder, decoder, reparam, dataset.eval, evalBatchSize, mse, kldiv);
+
+        if (msevalue + kldivvalue >= currentEvalLoss) epochsWithoutImprovement++;
+        else epochsWithoutImprovement = 0; 
+        
+        currentEvalLoss = msevalue + kldivvalue;
         std::cout << "epoch " << epoch << " completed. evaluation loss: " << msevalue + kldivvalue << ", (mse - " << msevalue <<  ", kldiv - " << kldivvalue << ")\n";
         encoder.save("../encoder.model");
         decoder.save("../decoder.model");
     }
 
-
+    std::cout << "training finished.\n";
 }
 
 
