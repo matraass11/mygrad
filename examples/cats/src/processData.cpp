@@ -102,14 +102,14 @@ static Tensor tensorWithCatData(const std::vector<size_t>& indices) {
 }
 
 
-Dataset loadCatImages(float trainSplit, float testSplit) {
+Dataset loadCatImages(float trainSplit, float evalSplit) {
 
     const size_t length = 29843;  //29843
     const size_t trainBoundary = length * trainSplit;
-    const size_t testBoundary = length * (trainSplit + testSplit);
+    const size_t evalBoundary = length * (trainSplit + evalSplit);
 
-    if (testBoundary != length) {
-        throw std::runtime_error("train+test must equal one. equals: " + std::to_string(trainSplit + testSplit));
+    if (evalBoundary != length) {
+        throw std::runtime_error("train+eval must equal one. equals: " + std::to_string(trainSplit + evalSplit));
     }
 
     std::vector<size_t> indices = shuffledIndices(length);

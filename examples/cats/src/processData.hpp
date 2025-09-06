@@ -1,15 +1,17 @@
+#pragma once
+
 #include "mygrad/mygrad.hpp"
 
 using namespace mygrad;
 
 struct Dataset {
     Tensor train; 
-    Tensor test;
+    Tensor eval;
 
-    Dataset( Tensor&& train, Tensor&& test) : 
+    Dataset( Tensor&& train, Tensor&& eval) : 
         train(std::move(train)), 
-        test(std::move(test)) {}
+        eval(std::move(eval)) {}
 };
 
-Dataset loadCatImages(float trainSplit, float testSplit);
+Dataset loadCatImages(float trainSplit, float evalSplit);
 void convertTensorToPng(const Tensor& imgTensor, size_t index, const std::string& filename);

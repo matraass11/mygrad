@@ -8,23 +8,36 @@
 using namespace mygrad;
 
 
-void trainModel( Model& encoder, Model& decoder, Tensor& trainingImages ) {
+static void trainForOneEpoch ( 
+        Model& encoder, Model& decoder, Reparameterize& reparam, 
+        Tensor& data, size_t batchSize, size_t epoch,
+        Adam& optim, MSEloss& mse, KLdivWithStandardNormal& kldiv );
 
-    for (size_t i = 0; i < trainingImages.length; i++) {
-        trainingImages.data[i] /= 255.0; 
+static std::pair<dtype, dtype> validateModel ( 
+        Model& encoder, Model& decoder, Reparameterize& reparam, 
+        Tensor& data, size_t batchSize, 
+        MSEloss& mse, KLdivWithStandardNormal& kldiv );
+
+
+void trainModel( Model& encoder, Model& decoder, Dataset& dataset ) {
+
+    for (size_t i = 0; i < dataset.train.length; i++) {
+        dataset.train.data[i] /= 255.0; 
     }
-
+    for (size_t i = 0; i < dataset.eval.length; i++) {
+        dataset.eval.data[i] /= 255.0; 
+    }
 
     std::vector<Tensor*> parameters = encoder.parameters;
     parameters.insert( parameters.end(), decoder.parameters.begin(), decoder.parameters.end() );
 
+    Reparameterize reparam;
     Adam optim(parameters, 0.001);
-
-    // KLdivWithStandardNormal kldiv;
-    MSEloss mse;
+    KLdivWithStandardNormal kldiv;
+    MSEloss mse("sum");
 
     const size_t epochs = 50;
-    const size_t batchSize = 64;
+    const size_t trainBatchSize = 64, evalBatchSize = 512;
 
     for (size_t epoch = 0; epoch < epochs; epoch++) {
 
@@ -32,27 +45,9 @@ void trainModel( Model& encoder, Model& decoder, Tensor& trainingImages ) {
 
         else if (epoch == 30) optim.learningRate /= 2;
 
-        Tensor& data = trainingImages;
-        const size_t trainSize = data.dimensions[0];
-
-        const std::vector<size_t> indices = shuffledIndices(trainSize);
-        for (int batch = 0; batch < trainSize / batchSize; batch++) {
-            const std::vector<size_t> batchIndices = slicedIndices(indices, batch*batchSize, batchSize);
-            Tensor batchInputs = retrieveBatchFromData(data, batchIndices);
-
-            Tensor& outputs = decoder(encoder(batchInputs));
-            dtype loss = mse(outputs, batchInputs);
-
-            if (batch % 25 == 0) {
-                printf("%s%u%s%.4f\n", "batch - ", batch, ", loss - ", loss);
-            }
-
-            encoder.zeroGrad(), decoder.zeroGrad();
-            mse.backward(), decoder.backward(), encoder.backward();
-
-            optim.step();
-
-        }
+        // trainForOneEpoch(encoder, decoder, reparam, dataset.train, trainBatchSize, epoch, optim, mse, kldiv);
+        auto [msevalue, kldivvalue] = validateModel(encoder, decoder, reparam, dataset.eval, evalBatchSize, mse, kldiv);
+        std::cout << "epoch " << epoch << " completed. evaluation loss: " << msevalue + kldivvalue << ", (mse - " << msevalue <<  ", kldiv - " << kldivvalue << ")\n";
         encoder.save("../encoder.model");
         decoder.save("../decoder.model");
     }
@@ -60,7 +55,63 @@ void trainModel( Model& encoder, Model& decoder, Tensor& trainingImages ) {
 
 }
 
-void testModel( Model& encoder, Model& decoder, Tensor& testImages, const std::string& dirForImages) {
+
+static void trainForOneEpoch ( 
+        Model& encoder, Model& decoder, Reparameterize& reparam, 
+        Tensor& data, size_t batchSize, size_t epoch,
+        Adam& optim, MSEloss& mse, KLdivWithStandardNormal& kldiv ) {
+
+    const size_t trainSize = data.dimensions[0];
+    const std::vector<size_t> indices = shuffledIndices(trainSize);
+    for (int batch = 0; batch < trainSize / batchSize; batch++) {
+        const std::vector<size_t> batchIndices = slicedIndices(indices, batch*batchSize, batchSize);
+        Tensor batchInputs = retrieveBatchFromData(data, batchIndices);
+
+        Tensor& latentDistributions = encoder(batchInputs);
+        Tensor& encoding = reparam(latentDistributions);
+        Tensor& outputs = decoder(encoding);
+
+        dtype msePartOfLoss = mse(outputs, batchInputs), kldivPartOfLoss = kldiv(latentDistributions, std::min(1.0, epoch / 20.0));
+
+        if (batch % 30 == 0) {
+            printf("%s%u%s%.4f%s%.4f%s%.4f%s\n", "batch - ", batch, ", loss - ",
+                msePartOfLoss + kldivPartOfLoss, ", (mse - ", msePartOfLoss, ", kldiv - ", kldivPartOfLoss, ")");
+        }
+
+        encoder.zeroGrad(), reparam.zeroGrad(), decoder.zeroGrad();
+        mse.backward(), kldiv.backward(), decoder.backward(), reparam.backward(), encoder.backward();
+
+        optim.step();
+
+    }
+}
+
+
+static std::pair<dtype, dtype> validateModel ( 
+        Model& encoder, Model& decoder, Reparameterize& reparam, 
+        Tensor& data, size_t batchSize, 
+        MSEloss& mse, KLdivWithStandardNormal& kldiv ) {
+
+    const size_t evalSize = data.dimensions[0];
+
+    const std::vector<size_t> indices = shuffledIndices(evalSize);
+    
+    dtype msePartOfLoss = 0, kldivPartOfLoss = 0;
+    for (int batch = 0; batch < evalSize / batchSize; batch++) {
+        const std::vector<size_t> batchIndices = slicedIndices(indices, batch*batchSize, batchSize);
+        Tensor batchInputs = retrieveBatchFromData(data, batchIndices);
+
+        Tensor& latentDistributions = encoder(batchInputs);
+        Tensor& encoding = reparam(latentDistributions);
+        Tensor& outputs = decoder(encoding);
+
+        msePartOfLoss += mse(outputs, batchInputs), kldivPartOfLoss += kldiv(latentDistributions, 1); // beta should be one for the validation
+    }
+    return {msePartOfLoss / (evalSize / batchSize), kldivPartOfLoss / (evalSize / batchSize)};
+}
+
+
+void reconstructImages( Model& encoder, Model& decoder, Tensor& testImages, const std::string& dirForImages) {
 
     const std::vector<size_t> allShuffledIndices = shuffledIndices(testImages.dimensions[0]);
     const std::vector<size_t> indices = slicedIndices(allShuffledIndices, 0, 10);
@@ -72,7 +123,14 @@ void testModel( Model& encoder, Model& decoder, Tensor& testImages, const std::s
         normalizedTestBatch.data[i] = testBatch.data[i] / 255.0;
     }
 
-    Tensor& output = decoder(encoder(normalizedTestBatch));
+    // Tensor& output = decoder(encoder(normalizedTestBatch)); 
+    // AUTOENCODER VARIANT
+
+    Reparameterize reparam;
+    Tensor& latentDistribution = encoder(normalizedTestBatch);
+    Tensor& output = decoder(reparam(latentDistribution)); 
+    // VAE VARIANT
+
     Reshape reshaper({1, 3, 64, 64}, 0);
     Tensor& reconstructedImages = reshaper(output);
 
@@ -88,7 +146,7 @@ void testModel( Model& encoder, Model& decoder, Tensor& testImages, const std::s
     }
 }
 
-void generateImages( Model& encoder, Model& decoder, size_t latent,const std::string& dirForImages ) {
+void generateImages( Model& encoder, Model& decoder, size_t latent, const std::string& dirForImages ) {
     Reparameterize reparam;
     const size_t amountOfImages = 10;
 
@@ -96,49 +154,50 @@ void generateImages( Model& encoder, Model& decoder, size_t latent,const std::st
     // EXPERIMENT FOR SHOWING THAT IMAGE GEN FROM A REGULAR AUTOENCODER WON'T WORK 
 
     
-    Dataset dataset = loadCatImages(0.9, 0.1);
-    Tensor averageLatents = Tensor::zeros({latent});
-    size_t divisor = 0;
+    // Dataset dataset = loadCatImages(0.9, 0.1);
+    // Tensor averageLatents = Tensor::zeros({latent});
+    // size_t divisor = 0;
 
-    const size_t batchSize = 64;
-    const std::vector<size_t> indices = shuffledIndices(dataset.test.dimensions[0]);
-    for (int batch = 0; batch < dataset.test.dimensions[0] / batchSize; batch++) {
-        const std::vector<size_t> batchIndices = slicedIndices(indices, batch*batchSize, batchSize);
-        Tensor batchInputs = retrieveBatchFromData(dataset.test, batchIndices);
+    // const size_t batchSize = 64;
+    // const std::vector<size_t> indices = shuffledIndices(dataset.test.dimensions[0]);
+    // for (int batch = 0; batch < dataset.test.dimensions[0] / batchSize; batch++) {
+    //     const std::vector<size_t> batchIndices = slicedIndices(indices, batch*batchSize, batchSize);
+    //     Tensor batchInputs = retrieveBatchFromData(dataset.test, batchIndices);
 
-        for (size_t i = 0; i < batchInputs.length; i++) {
-            batchInputs.data[i] /= 255.0;
-        }
+    //     for (size_t i = 0; i < batchInputs.length; i++) {
+    //         batchInputs.data[i] /= 255.0;
+    //     }
         
-        Tensor& latents = encoder(batchInputs);
-        for (size_t image = 0; image < latents.dimensions[0]; image++) {
-            for (size_t latentDim = 0; latentDim < latents.dimensions[1]; latentDim++){
-                averageLatents.data[latentDim] += latents.at({image, latentDim});
-            }
-        }
+    //     Tensor& latents = encoder(batchInputs);
+    //     for (size_t image = 0; image < latents.dimensions[0]; image++) {
+    //         for (size_t latentDim = 0; latentDim < latents.dimensions[1]; latentDim++){
+    //             averageLatents.data[latentDim] += latents.at({image, latentDim});
+    //         }
+    //     }
 
-        divisor += latents.dimensions[0];
-    }
+    //     divisor += latents.dimensions[0];
+    // }
 
-    for (size_t i = 0; i < averageLatents.length; i++) {
-        averageLatents.data[i] /= divisor;
-    }
+    // for (size_t i = 0; i < averageLatents.length; i++) {
+    //     averageLatents.data[i] /= divisor;
+    // }
 
-    Tensor averageLatentsWithNoise = Tensor::zeros({amountOfImages, latent});
-    for (size_t image = 0; image < amountOfImages; image++) {
-        for (size_t latentDim = 0; latentDim < latent; latentDim++) {
-            const std::vector<dtype> noiseToAdd = normDistVector(latent, 0.05);
-            averageLatentsWithNoise.at({image, latentDim}) = averageLatents.at({latentDim}) + noiseToAdd[latentDim];
-        }
-    }
+    // Tensor averageLatentsWithNoise = Tensor::zeros({amountOfImages, latent});
+    // for (size_t image = 0; image < amountOfImages; image++) {
+    //     for (size_t latentDim = 0; latentDim < latent; latentDim++) {
+    //         const std::vector<dtype> noiseToAdd = normDistVector(latent, 0.05);
+    //         averageLatentsWithNoise.at({image, latentDim}) = averageLatents.at({latentDim}) + noiseToAdd[latentDim];
+    //     }
+    // }
 
-    Tensor& output = decoder(averageLatentsWithNoise);
+    // Tensor& output = decoder(averageLatentsWithNoise);
 
     // END OF EXPERIMENT CODE
+    // Reparameterize reparam;
 
-    // Tensor normDistWithLogVariance = Tensor::zeros({amountOfImages, latent * 2});
-    // reparam.forward(normDistWithLogVariance);
-    // Tensor& output = decoder.forward(reparam.outputTensor);
+    Tensor normDistWithLogVariance = Tensor::zeros({amountOfImages, latent * 2});
+    reparam.forward(normDistWithLogVariance);
+    Tensor& output = decoder.forward(reparam.outputTensor);
 
     for (size_t i = 0; i < output.length; i++) {
         output.data[i] *= 255;
