@@ -32,7 +32,6 @@ public:
     const std::string reduction; // reduction = sum will divide by batch size. reduction = mean will divide by entire size of input
 
     MSEloss( const std::string& reduction) : reduction(reduction) {
-        std::cout << "reduction is " << reduction << "\n";
         if (reduction != std::string("sum") and reduction != std::string("mean")) throw std::runtime_error("reduction for MSEloss must be one of: 'sum', 'mean'");
     };
 
