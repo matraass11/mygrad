@@ -7,7 +7,7 @@
 ## macos / linux:
 
 ```bash
-cmake . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++
+cmake . -B build -DCMAKE_BUILD_TYPE=Release 
 cmake --build build
 ```
 
@@ -15,7 +15,7 @@ cmake --build build
 ```bat
 :: Open "x64 Native Tools Command Prompt for VS"
 
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ -G "NMake Makefiles"
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -G "NMake Makefiles"
 cmake --build build
 ```
 
