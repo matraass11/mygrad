@@ -130,7 +130,6 @@ struct Reparameterize : Layer {
 
 private:
     Tensor currentEpsilons; // for backprop
-    // std::random_device dev;
     std::mt19937 generator;
     std::normal_distribution<dtype> normDist {0, 1};
 

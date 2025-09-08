@@ -121,7 +121,6 @@ void Upsample::forward( Tensor& inputTensor ) {
             }
         }
     }
-    // outputTensor.data[i] = inputTensor.data[i / scalingFactor];
 }
 
 
@@ -186,14 +185,7 @@ void Reshape::manageDimensions( const Tensor& inputTensor ) {
 
             newDimensions[freeDimension.value()] = inputTensor.length / outLengthWithoutFreeDim;
 
-
-            // std::cout << "new dims: " << newDimensions;
-            // std::cout << "input dims: " << inputTensor.dimensions;
-
             outputTensor = Tensor::zeros(newDimensions);
-
-            assert(inputTensor.length == outputTensor.length);
-
         }   
 
         else throw std::runtime_error("reshape can't be done when the length of the input and the output are different");
@@ -318,8 +310,6 @@ void Reparameterize::backward() {
 
     for (size_t i = 0; i < inputTensor.length; i += 2) {
         dtype gradPassedDown = outputTensor.grads[i / 2];
-
-        // std::cout << "gradPassedDown in reparam at i/2 = " << i/2 << ": " << outputTensor.grads[i / 2] << "\n";
 
         inputTensor.grads[i] += 1 * gradPassedDown;
         dtype std = std::exp(inputTensor.data[i + 1] / 2); 
