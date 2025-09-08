@@ -8,59 +8,121 @@
 using namespace mygrad;
 
 
-void trainModel( Model& encoder, Model& decoder, Tensor& trainingImages ) {
+static void trainForOneEpoch ( 
+        Model& encoder, Model& decoder, Reparameterize& reparam, 
+        Tensor& data, size_t batchSize, size_t epoch,
+        Adam& optim, MSEloss& mse, KLdivWithStandardNormal& kldiv );
 
-    for (size_t i = 0; i < trainingImages.length; i++) {
-        trainingImages.data[i] /= 255.0; 
+static std::pair<dtype, dtype> validateModel ( 
+        Model& encoder, Model& decoder, Reparameterize& reparam, 
+        Tensor& data, size_t batchSize, 
+        MSEloss& mse, KLdivWithStandardNormal& kldiv );
+
+
+void trainModel( Model& encoder, Model& decoder, Dataset& dataset ) {
+
+    for (size_t i = 0; i < dataset.train.length; i++) {
+        dataset.train.data[i] /= 255.0; 
     }
-
+    for (size_t i = 0; i < dataset.eval.length; i++) {
+        dataset.eval.data[i] /= 255.0; 
+    }
 
     std::vector<Tensor*> parameters = encoder.parameters;
     parameters.insert( parameters.end(), decoder.parameters.begin(), decoder.parameters.end() );
 
+    Reparameterize reparam;
     Adam optim(parameters, 0.001);
+    KLdivWithStandardNormal kldiv;
+    MSEloss mse("sum");
 
-    // KLdivWithStandardNormal kldiv;
-    MSEloss mse;
+    const size_t epochs = 75;
+    const size_t trainingPatience = 10, LRpatience=5;
+    const size_t trainBatchSize = 64, evalBatchSize = 512;
 
-    const size_t epochs = 50;
-    const size_t batchSize = 64;
+    dtype lowestEvalLoss = 999999;
+    size_t epochsWithoutImprovement = 0;
 
     for (size_t epoch = 0; epoch < epochs; epoch++) {
 
-        if (epoch == 10) optim.learningRate /= 10;
+        if (epochsWithoutImprovement > trainingPatience) break;
 
-        else if (epoch == 30) optim.learningRate /= 2;
+        else if (epochsWithoutImprovement > LRpatience) optim.learningRate /= 10;
 
-        Tensor& data = trainingImages;
-        const size_t trainSize = data.dimensions[0];
+        trainForOneEpoch(encoder, decoder, reparam, dataset.train, trainBatchSize, epoch, optim, mse, kldiv);
+        auto [msevalue, kldivvalue] = validateModel(encoder, decoder, reparam, dataset.eval, evalBatchSize, mse, kldiv);
 
-        const std::vector<size_t> indices = shuffledIndices(trainSize);
-        for (int batch = 0; batch < trainSize / batchSize; batch++) {
-            const std::vector<size_t> batchIndices = slicedIndices(indices, batch*batchSize, batchSize);
-            Tensor batchInputs = retrieveBatchFromData(data, batchIndices);
-
-            Tensor& outputs = decoder(encoder(batchInputs));
-            dtype loss = mse(outputs, batchInputs);
-
-            if (batch % 25 == 0) {
-                printf("%s%u%s%.4f\n", "batch - ", batch, ", loss - ", loss);
-            }
-
-            encoder.zeroGrad(), decoder.zeroGrad();
-            mse.backward(), decoder.backward(), encoder.backward();
-
-            optim.step();
-
+        if (msevalue + kldivvalue >= lowestEvalLoss) epochsWithoutImprovement++;
+        else {
+            epochsWithoutImprovement = 0; 
+            lowestEvalLoss = msevalue + kldivvalue;
         }
+        
+        std::cout << "epoch " << epoch << " completed. evaluation loss: " << msevalue + kldivvalue << ", (mse - " << msevalue <<  ", kldiv - " << kldivvalue << ")\n";
         encoder.save("../encoder.model");
         decoder.save("../decoder.model");
     }
 
-
+    std::cout << "training finished.\n";
 }
 
-void testModel( Model& encoder, Model& decoder, Tensor& testImages, const std::string& dirForImages) {
+
+static void trainForOneEpoch ( 
+        Model& encoder, Model& decoder, Reparameterize& reparam, 
+        Tensor& data, size_t batchSize, size_t epoch,
+        Adam& optim, MSEloss& mse, KLdivWithStandardNormal& kldiv ) {
+
+    const size_t trainSize = data.dimensions[0];
+    const std::vector<size_t> indices = shuffledIndices(trainSize);
+    for (int batch = 0; batch < trainSize / batchSize; batch++) {
+        const std::vector<size_t> batchIndices = slicedIndices(indices, batch*batchSize, batchSize);
+        Tensor batchInputs = retrieveBatchFromData(data, batchIndices);
+
+        Tensor& latentDistributions = encoder(batchInputs);
+        Tensor& encoding = reparam(latentDistributions);
+        Tensor& outputs = decoder(encoding);
+
+        dtype msePartOfLoss = mse(outputs, batchInputs), kldivPartOfLoss = kldiv(latentDistributions, std::min(1.0, epoch / 20.0));
+
+        if (batch % 30 == 0) {
+            printf("%s%u%s%.4f%s%.4f%s%.4f%s\n", "batch - ", batch, ", loss - ",
+                msePartOfLoss + kldivPartOfLoss, ", (mse - ", msePartOfLoss, ", kldiv - ", kldivPartOfLoss, ")");
+        }
+
+        encoder.zeroGrad(), reparam.zeroGrad(), decoder.zeroGrad();
+        mse.backward(), kldiv.backward(), decoder.backward(), reparam.backward(), encoder.backward();
+
+        optim.step();
+
+    }
+}
+
+
+static std::pair<dtype, dtype> validateModel ( 
+        Model& encoder, Model& decoder, Reparameterize& reparam, 
+        Tensor& data, size_t batchSize, 
+        MSEloss& mse, KLdivWithStandardNormal& kldiv ) {
+
+    const size_t evalSize = data.dimensions[0];
+
+    const std::vector<size_t> indices = shuffledIndices(evalSize);
+    
+    dtype msePartOfLoss = 0, kldivPartOfLoss = 0;
+    for (int batch = 0; batch < evalSize / batchSize; batch++) {
+        const std::vector<size_t> batchIndices = slicedIndices(indices, batch*batchSize, batchSize);
+        Tensor batchInputs = retrieveBatchFromData(data, batchIndices);
+
+        Tensor& latentDistributions = encoder(batchInputs);
+        Tensor& encoding = reparam(latentDistributions);
+        Tensor& outputs = decoder(encoding);
+
+        msePartOfLoss += mse(outputs, batchInputs), kldivPartOfLoss += kldiv(latentDistributions, 1); // beta should be one for the validation
+    }
+    return {msePartOfLoss / (evalSize / batchSize), kldivPartOfLoss / (evalSize / batchSize)};
+}
+
+
+void reconstructImages( Model& encoder, Model& decoder, Tensor& testImages, const std::string& dirForImages ) {
 
     const std::vector<size_t> allShuffledIndices = shuffledIndices(testImages.dimensions[0]);
     const std::vector<size_t> indices = slicedIndices(allShuffledIndices, 0, 10);
@@ -72,9 +134,9 @@ void testModel( Model& encoder, Model& decoder, Tensor& testImages, const std::s
         normalizedTestBatch.data[i] = testBatch.data[i] / 255.0;
     }
 
-    Tensor& output = decoder(encoder(normalizedTestBatch));
-    Reshape reshaper({1, 3, 64, 64}, 0);
-    Tensor& reconstructedImages = reshaper(output);
+    Reparameterize reparam;
+    Tensor& latentDistribution = encoder(normalizedTestBatch);
+    Tensor& reconstructedImages = decoder(reparam(latentDistribution));
 
     for (size_t i = 0; i < reconstructedImages.length; i++) {
         reconstructedImages.data[i] *= 255;
@@ -88,31 +150,22 @@ void testModel( Model& encoder, Model& decoder, Tensor& testImages, const std::s
     }
 }
 
-// void generateImages() {
-//     Reparameterize reparam;
-
-//     Model decoder {
-//         LinearLayer(latent, neurons),
-//         ReLU(),
-//         LinearLayer(neurons, pixelsInImage),
-//         Sigmoid()
-//     };
-
-//     decoder.load("../decoder.model");
-
-//     const size_t amountOfImages = 10;
-//     Tensor normDistWithLogVariance = Tensor::zeros({amountOfImages, latent * 2});
-//     reparam.forward(normDistWithLogVariance);
-//     Tensor& output = decoder.forward(reparam.outputTensor);
-//     for (size_t i = 0; i < output.length; i++) {
-//         output.data[i] *= 255;
-//     }
-//     Reshape reshaper({amountOfImages, 3, 64, 64});
-//     reshaper.forward(output);
-//     Tensor& images = reshaper.outputTensor;
-
-//     for (size_t i = 0; i < images.dimensions[0]; i++) {
-//         convertTensorToPng(images, i, std::string("../newCats/cat_" + std::to_string(i) + ".png"));
-//     }
+void generateImages( Model& encoder, Model& decoder, size_t latent, const std::string& dirForImages, size_t amountOfImages ) {
     
-// }
+    Reparameterize reparam;
+
+    Tensor normDistWithLogVariance = Tensor::zeros({amountOfImages, latent * 2});
+    reparam.forward(normDistWithLogVariance);
+    Tensor& images = decoder.forward(reparam.outputTensor);
+
+    for (size_t i = 0; i < images.length; i++) {
+        images.data[i] *= 255;
+    }
+
+    std::filesystem::create_directory( dirForImages );
+
+    for (size_t i = 0; i < images.dimensions[0]; i++) {
+        convertTensorToPng(images, i, std::string(dirForImages + "/cat_" + std::to_string(i) + ".png"));
+    }
+    
+}

@@ -70,7 +70,7 @@ dtype MSEloss::operator()( Tensor& outputs, const Tensor& labels ) {
     checkDimensions( outputs, labels );
     setInputPointers( &outputs, &labels );
 
-    return std::transform_reduce(
+    dtype loss = std::transform_reduce(
         outputs.data.get(), outputs.data.get() + outputs.length, labels.data.get(),
         0.0,
         std::plus(),
@@ -78,7 +78,10 @@ dtype MSEloss::operator()( Tensor& outputs, const Tensor& labels ) {
             dtype diff = output - label;
             return diff * diff;
         }
-    ) / outputs.length;
+    );
+    if (reduction == "mean") loss /= outputs.length;
+    else if (reduction == "sum") loss /= outputs.dimensions[0];
+    return loss;
 }
 
 void MSEloss::backward() {
@@ -88,19 +91,23 @@ void MSEloss::backward() {
     #endif
     
     for (size_t i = 0; i < outputs->length; i++) {
-        outputs->grads[i] += 2 * (outputs->data[i] - labels->data[i]);
+        dtype gradient = 2 * (outputs->data[i] - labels->data[i]);
+        if (reduction == "mean") gradient /= outputs->length;
+        else if (reduction == "sum") gradient /= outputs->dimensions[0];
+        outputs->grads[i] += gradient;
     }
 
     setInputPointers( nullptr, nullptr );
 }
 
 
-dtype KLdivWithStandardNormal::operator()( Tensor& distribution ) {
+dtype KLdivWithStandardNormal::operator()( Tensor& distribution, dtype beta ) {
     setInputPointers( &distribution );
+    currentBeta = beta;
 
     #ifndef NDEBUG
         if (distribution.dimensions[1] % 2 != 0 or distribution.dimensions.size() != 2) 
-            throw std::runtime_error("dimensions of distribution should be of size 2 and have n rows for means and n rows for logvariance");
+            throw std::runtime_error("dimensions of distribution should be of size 2 and have n columns for means and n columns for logvariances");
     #endif
 
     dtype loss = 0;
@@ -110,16 +117,16 @@ dtype KLdivWithStandardNormal::operator()( Tensor& distribution ) {
     }
 
     loss /= -2; // the math shorthand part
-    loss /= (distribution.dimensions[0]); // the normalization part. hence the redundancy is left for clarity // no longer relevant if this works
-    return loss;
+    loss /= (distribution.dimensions[0]); // the normalization part
+    return loss * beta;
 }
 
 void KLdivWithStandardNormal::backward() {
     #ifndef NDEBUG
-        if (!(distribution)) throw std::runtime_error("backward before forward impossible");
+        if (!(distribution) or (!currentBeta)) throw std::runtime_error("backward before forward impossible");
     #endif
 
-    const dtype divisor = -2 * static_cast<dtype>(distribution->dimensions[0] / 2);
+    const dtype divisor = -2 * static_cast<dtype>(distribution->dimensions[0]) / currentBeta;
     for (size_t i = 0; i < distribution->length; i+=2) {
         dtype mean = distribution->data[i], logvar = distribution->data[i + 1];
         distribution->grads[i] += (-2 * mean) / divisor;
@@ -127,6 +134,7 @@ void KLdivWithStandardNormal::backward() {
     }
 
     setInputPointers( nullptr );
+    currentBeta = 0;
 }
 
 } // namespace mygrad
