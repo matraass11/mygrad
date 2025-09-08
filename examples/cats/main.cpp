@@ -74,9 +74,8 @@ int main(int argc, char* argv[]) {
 
         size_t amountOfImages = options.amountOfImages.value_or(DEFAULT_AMOUNT_OF_IMAGES);
 
-        encoder.load("../pretrained_encoder.model");
         decoder.load("../pretrained_decoder.model");
-        generateImages(encoder, decoder, latent, "../newCats", amountOfImages);
+        generateImages(decoder, latent, "../newCats", amountOfImages);
         std::cout << "new images have been saved to 'cats/newCats/'\n";
     }
 

@@ -150,7 +150,7 @@ void reconstructImages( Model& encoder, Model& decoder, Tensor& testImages, cons
     }
 }
 
-void generateImages( Model& encoder, Model& decoder, size_t latent, const std::string& dirForImages, size_t amountOfImages ) {
+void generateImages( Model& decoder, size_t latent, const std::string& dirForImages, size_t amountOfImages ) {
     
     Reparameterize reparam;
 
