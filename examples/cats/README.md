@@ -1,7 +1,7 @@
 # simple variational autoencoder trained on images of cats using mygrad!
 
 <div align="center">
-  <strong><big><big>Examples of Generated Images</big></big></strong><br/><br/>
+  <strong><big>examples of generated images</big></strong><br/><br/>
   <img src="assets/example1.png" alt="exampleCat1" width="120"/>
   <img src="assets/example2.png" alt="exampleCat2" width="120"/>
   <img src="assets/example3.png" alt="exampleCat3" width="120"/>
