@@ -8,22 +8,29 @@
 
 #include "src/processData.hpp"
 #include "src/modelRunner.hpp"
+#include "src/cli.hpp"
 
 using namespace mygrad;
 
+#define DEFAULT_AMOUNT_OF_IMAGES 10
 
 int main(int argc, char* argv[]) {
+    
 
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <train|test>\n";
+    CLIOptions options;
+    try {
+        options = parseArguments(argc, argv);
+    } catch (const std::exception& e) {
+        std::cerr << "error: " << e.what() << "\n";
         return 1;
     }
 
+
     Dataset images = loadCatImages(0.9, 0.1);
 
-    const size_t pixelsInImage = 64 * 64 * 3;
     const size_t latent = 128;
-
+    
+    const size_t pixelsInImage = 64 * 64 * 3;
     const size_t imageSizeBeforeLatent = 256*4*4;
 
     Model encoder {
@@ -49,27 +56,28 @@ int main(int argc, char* argv[]) {
         Sigmoid()
     };
 
-    std::string mode = argv[1];
 
-    if (mode == "train") {
+    if (options.mode == "train") {
 
         trainModel(encoder, decoder, images);
-        encoder.save("../encoder.model");
-        decoder.save("../decoder.model");
+        encoder.save("../newly_trained_encoder.model");
+        decoder.save("../newly_trained_decoder.model");
 
-    } else if (mode == "test") {
+    } else if (options.mode == "reconstruct") {
 
-        encoder.load("../encoder.model");
-        decoder.load("../decoder.model");
+        encoder.load("../pretrained_encoder.model");
+        decoder.load("../pretrained_decoder.model");
         reconstructImages(encoder, decoder, images.eval, "../testImages");
-        std::cout << "test images have been saved to 'cats/testImages/'\n";
-        generateImages(encoder, decoder, latent, "../newCats");
-        std::cout << "new images have been saved to 'cats/newCats/'\n";
+        std::cout << "original and reconstructed images have been saved to 'cats/testImages/'\n";
 
-    } else {
-        std::cerr << "Invalid mode: " << mode << "\n";
-        std::cerr << "Expected one of: train, test\n";
-        return 1;
+    } else if (options.mode == "generate") {
+
+        size_t amountOfImages = options.amountOfImages.value_or(DEFAULT_AMOUNT_OF_IMAGES);
+
+        encoder.load("../pretrained_encoder.model");
+        decoder.load("../pretrained_decoder.model");
+        generateImages(encoder, decoder, latent, "../newCats", amountOfImages);
+        std::cout << "new images have been saved to 'cats/newCats/'\n";
     }
 
 }
