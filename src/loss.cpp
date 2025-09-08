@@ -126,11 +126,11 @@ void KLdivWithStandardNormal::backward() {
         if (!(distribution) or (!currentBeta)) throw std::runtime_error("backward before forward impossible");
     #endif
 
-    const dtype divisor = -2 * static_cast<dtype>(distribution->dimensions[0]) / currentBeta;
+    const dtype divisor = static_cast<dtype>(distribution->dimensions[0]) / currentBeta;
     for (size_t i = 0; i < distribution->length; i+=2) {
         dtype mean = distribution->data[i], logvar = distribution->data[i + 1];
-        distribution->grads[i] += (-2 * mean) / divisor;
-        distribution->grads[i + 1] += (1 - std::exp(logvar)) / divisor;
+        distribution->grads[i] += mean / divisor;
+        distribution->grads[i + 1] += (std::exp(logvar) - 1) / (2 * divisor);
     }
 
     setInputPointers( nullptr );
