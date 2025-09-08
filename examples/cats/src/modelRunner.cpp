@@ -43,7 +43,7 @@ void trainModel( Model& encoder, Model& decoder, Dataset& dataset ) {
     dtype lowestEvalLoss = 999999;
     size_t epochsWithoutImprovement = 0;
 
-    for (size_t epoch = 0; epoch < epochs; epoch++) {
+    for (size_t epoch = 20; epoch < epochs; epoch++) {
 
         if (epochsWithoutImprovement > trainingPatience) break;
 
@@ -84,7 +84,7 @@ static void trainForOneEpoch (
 
         dtype msePartOfLoss = mse(outputs, batchInputs), kldivPartOfLoss = kldiv(latentDistributions, std::min(1.0, epoch / 20.0));
 
-        if (batch % 30 == 0) {
+        if (batch % 3 == 0) {
             printf("%s%u%s%.4f%s%.4f%s%.4f%s\n", "batch - ", batch, ", loss - ",
                 msePartOfLoss + kldivPartOfLoss, ", (mse - ", msePartOfLoss, ", kldiv - ", kldivPartOfLoss, ")");
         }

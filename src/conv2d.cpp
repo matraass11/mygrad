@@ -113,7 +113,7 @@ void Conv2d::im2col( const Tensor& inputTensor ) {
 
                     for (int column = -static_cast<int>(paddingSize); column < static_cast<int>(inputTensor.dimensions[3] + paddingSize - kernelSize + 1); column += stride) {
                     
-                        movePatchToMatrixForm(picture, row, column, matrixFormInput, rowInMatrixForm); // is this line right?
+                        movePatchToMatrixForm(picture, row, column, matrixFormInput, rowInMatrixForm);
                         rowInMatrixForm++;
                     }
                 }
