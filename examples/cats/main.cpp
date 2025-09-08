@@ -25,9 +25,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-
-    Dataset images = loadCatImages(0.9, 0.1);
-
     const size_t latent = 128;
     
     const size_t pixelsInImage = 64 * 64 * 3;
@@ -59,11 +56,15 @@ int main(int argc, char* argv[]) {
 
     if (options.mode == "train") {
 
+        Dataset images = loadCatImages(0.9, 0.1);
+
         trainModel(encoder, decoder, images);
         encoder.save("../newly_trained_encoder.model");
         decoder.save("../newly_trained_decoder.model");
 
     } else if (options.mode == "reconstruct") {
+
+        Dataset images = loadCatImages(0.9, 0.1);
 
         encoder.load("../pretrained_encoder.model");
         decoder.load("../pretrained_decoder.model");
