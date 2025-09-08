@@ -31,7 +31,8 @@ cmake --build build
 
 ## to run:
 
-### first, download the [dataset](https://www.kaggle.com/datasets/borhanitrash/cat-dataset) as zip, unpack it into this directory, and rename the directory with the dataset to be catsData: 
+### you don't have to download anything to generate new images.
+### if, however, you want to train the model or look at how it reconstructs images, download the [dataset](https://www.kaggle.com/datasets/borhanitrash/cat-dataset) as zip, unpack it into this directory, and rename the directory with the dataset to be catsData: 
 ```
 mv cats catsData
 ```
