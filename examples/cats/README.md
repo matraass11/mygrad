@@ -29,15 +29,17 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -G "NMake Makefiles"
 cmake --build build
 ```
 
-## to run:
+## dataset:
 
-### you don't have to download anything to generate new images.
-### if, however, you want to train the model or look at how it reconstructs images, download the [dataset](https://www.kaggle.com/datasets/borhanitrash/cat-dataset) as zip, unpack it into this directory, and rename the directory with the dataset to be catsData: 
+### you don't have to download anything to generate new images, so just skip this step if generating images is all you want.
+
+if, however, you want to train the model or look at how it reconstructs images, download the [dataset](https://www.kaggle.com/datasets/borhanitrash/cat-dataset) as zip, unpack it into `mygrad/examples/cats/` (where this readme is located), and rename the directory with the dataset to be catsData: 
 ```
 mv cats catsData
 ```
 
-### then run the program:
+## to run:
+
 ```
 cd build 
 ./cats <train|reconstruct|generate [amountOfImages]>
