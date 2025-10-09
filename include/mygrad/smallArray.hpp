@@ -8,10 +8,10 @@
 
 namespace mygrad {
 
-template <typename T, T capacity_>
+template <typename T, size_t capacity_>
 struct SmallArray {
     std::array<T, capacity_> data;
-    T size_;
+    size_t size_;
 
 public:
     SmallArray(std::initializer_list<T> initList) : 
@@ -51,7 +51,7 @@ public:
     inline constexpr const T* begin() const noexcept { return &data[0] ; }
     inline constexpr const T* end() const noexcept { return &data[size_ - 1]; }
 
-    inline constexpr T size() const noexcept { return size_; }
+    inline constexpr size_t size() const noexcept { return size_; }
     inline constexpr T capacity() const noexcept { return capacity_; }
     inline constexpr T operator[](size_t i) const noexcept { return data[i]; }
     inline constexpr T& operator[](size_t i) noexcept { return data[i]; }
