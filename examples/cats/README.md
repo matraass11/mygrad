@@ -29,14 +29,28 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -G "NMake Makefiles"
 cmake --build build
 ```
 
+## weights:
+
+a fresh clone carries no weights — they live on the [v0.1.0 release](https://github.com/matraass11/mygrad/releases/tag/v0.1.0) and are fetched on demand, checksums verified.
+
+generating images needs the decoder alone, 14 MB:
+
+```bash
+cmake --build build --target fetch-cats-decoder
+```
+
+`reconstruct` needs the encoder as well — `cmake --build build --target fetch-cats` gets both.
+
 ## dataset:
 
-### you don't have to download anything to generate new images, so just skip this step if generating images is all you want.
+### you don't have to download anything besides the decoder to generate new images, so just skip this step if generating images is all you want.
 
 if, however, you want to train the model or look at how it reconstructs images, download the [dataset](https://www.kaggle.com/datasets/borhanitrash/cat-dataset) as zip, unpack it into `mygrad/examples/cats/` (where this readme is located), and rename the directory with the dataset to be catsData: 
 ```
 mv cats catsData
 ```
+
+the cats dataset stays a manual download: kaggle requires an account, so it cannot be fetched unattended.
 
 ## to run:
 

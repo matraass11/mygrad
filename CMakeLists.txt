@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# fetch-assets and friends, reachable from the example build trees too
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/assets.cmake)
+
 add_library(mygrad STATIC
     src/conv2d.cpp
     src/helper.cpp
