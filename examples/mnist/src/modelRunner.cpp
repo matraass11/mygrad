@@ -32,7 +32,10 @@ void testModel(Model& model) {
     Tensor testLabels = loadMnistLabels(path / "../dataset/test-labels-ubyte");
     Tensor standartizedTestImages = standartize(testImages);
 
-    std::cout << "test accuracy: " << test(model, standartizedTestImages, testLabels, 1024) << std::endl;
+    // 1000 divides the 10000 test images exactly; the loop drops the remainder
+    // batch, so a size that does not divide would quietly skip images and make
+    // the reported accuracy depend on the shuffle
+    std::cout << "test accuracy: " << test(model, standartizedTestImages, testLabels, 1000) << std::endl;
 }
 
 void showModel(Model& model) {

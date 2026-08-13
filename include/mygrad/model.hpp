@@ -21,6 +21,7 @@ public:
 
     void save(const std::string& filename) const;
     void load(const std::string& filename);
+    size_t checkpointSize() const; // bytes save writes and load demands
     void zeroGrad();
     Tensor& operator()(Tensor& x);
     Tensor& forward(Tensor& x);
