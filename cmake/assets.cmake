@@ -63,7 +63,7 @@ addFetchTarget(fetch-cats-encoder
 addFetchTarget(fetch-mnist-model
     mnist_classifier.model
     "${mygradExamplesDirectory}/mnist/model"
-    6e0d891e1b7d9a7abbfb5df7b552a52f79e6da16bb8c39d2e047fc2aafd430f9)
+    35ef9390f2520f6b6503b9c0e6b3aeff815a3f2134729b4564d020b86181ff14)
 
 set(mnistDatasetDirectory "${mygradExamplesDirectory}/mnist/dataset")
 set(mnistDatasetCommands "")
