@@ -1,3 +1,2 @@
 newCats
 *.model
-!pretrained_*.model
