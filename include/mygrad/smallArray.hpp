@@ -47,20 +47,20 @@ public:
 
 
     inline constexpr T* begin() noexcept { return &data[0]; }
-    inline constexpr T* end() noexcept { return &data[size_ - 1]; }
+    inline constexpr T* end() noexcept { return &data[0] + size_; }
     inline constexpr const T* begin() const noexcept { return &data[0] ; }
-    inline constexpr const T* end() const noexcept { return &data[size_ - 1]; }
+    inline constexpr const T* end() const noexcept { return &data[0] + size_; }
 
     inline constexpr size_t size() const noexcept { return size_; }
     inline constexpr T capacity() const noexcept { return capacity_; }
     inline constexpr T operator[](size_t i) const noexcept { return data[i]; }
     inline constexpr T& operator[](size_t i) noexcept { return data[i]; }
     inline constexpr T at(size_t i) const {
-        if (i < 0 or i >= size_) throw std::out_of_range(std::to_string(i) + " is out of range for SmallArray");
+        if (i >= size_) throw std::out_of_range(std::to_string(i) + " is out of range for SmallArray");
         return data[i];
     }
     inline constexpr T& at(size_t i) {
-        if (i < 0 or i >= size_) throw std::out_of_range(std::to_string(i) + " is out of range for SmallArray");
+        if (i >= size_) throw std::out_of_range(std::to_string(i) + " is out of range for SmallArray");
         return data[i];
     }
 
