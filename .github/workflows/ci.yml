@@ -1,0 +1,81 @@
+# Builds the library, the gradient-check suite and both examples across
+# gcc/clang x Debug/Release, then runs the gradient checks.
+#
+# Deliberately hermetic: nothing here downloads a release asset or a dataset.
+# The gradient checks need neither, so a red badge means the code is broken
+# rather than that someone's bucket is down. The examples are built, never run
+# -- running them needs weights that only `fetch-*` brings in. The scheduled
+# workflow owns that.
+#
+# Debug matters as much as Release: the `#ifndef NDEBUG` bounds and shape
+# checks in `Tensor::at` and every layer's `backward` are only compiled in
+# Debug, so a Release-only matrix would never exercise them.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.compiler }} ${{ matrix.buildType }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+        buildType: [Debug, Release]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: select the compiler
+        run: |
+          if [ "${{ matrix.compiler }}" = gcc ]; then
+            echo "CC=gcc"      >> "$GITHUB_ENV"
+            echo "CXX=g++"     >> "$GITHUB_ENV"
+          else
+            echo "CC=clang"    >> "$GITHUB_ENV"
+            echo "CXX=clang++" >> "$GITHUB_ENV"
+          fi
+
+      - name: report the compiler version
+        run: $CXX --version
+
+      # MYGRAD_BUILD_TESTS is what fetches Catch2; it is off by default so that
+      # the example builds below pull none of it in.
+      - name: configure the library and the tests
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DMYGRAD_BUILD_TESTS=ON
+
+      - name: build the library and the tests
+        run: cmake --build build --parallel 4
+
+      # Two ctest cases, the same binary at MYGRAD_NUM_THREADS=1 and at auto.
+      # The thread counts come from tests/CMakeLists.txt, not from here.
+      - name: gradient checks
+        run: ctest --test-dir build --output-on-failure
+
+      - name: build the mnist example
+        run: |
+          cmake -S examples/mnist -B examples/mnist/build -DCMAKE_BUILD_TYPE=${{ matrix.buildType }}
+          cmake --build examples/mnist/build --parallel 4
+
+      - name: build the cats example
+        run: |
+          cmake -S examples/cats -B examples/cats/build -DCMAKE_BUILD_TYPE=${{ matrix.buildType }}
+          cmake --build examples/cats/build --parallel 4
+
+      # TODO(ticket 011): once benchmarks/ exists, add a compile-only step here
+      #   cmake -S . -B build-bench -DCMAKE_BUILD_TYPE=Release -DMYGRAD_BUILD_BENCHMARKS=ON
+      #   cmake --build build-bench --parallel 4
+      # Build it, never time it: shared runners are noisy and thermally
+      # throttled, so CI must not publish timings -- but a benchmark nobody
+      # compiles rots within a month.

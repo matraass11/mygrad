@@ -2,7 +2,6 @@
 #include <stdexcept>
 #include <cmath>
 #include <numeric>
-#include <execution> 
 
 #include <cassert> 
 

@@ -4,6 +4,7 @@
 *.o
 .*
 !.gitignore
+!.github/
 
 catsData
 main
