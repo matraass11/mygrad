@@ -77,15 +77,17 @@ void LinearLayer::backward() {
                         {
                             std::lock_guard lock(weightRowMutexes[weightRow]);
                             for (size_t dotProductIterator=0; dotProductIterator < currentInputTensor->dimensions[1]; dotProductIterator++) {
-    
-                                weights.grads[weightRow*weightColumns + dotProductIterator] += 
-                                    currentInputTensor->data[inputRow*inpTensorColumns + dotProductIterator] * currentGradPassedDown; 
+
+                                weights.grads[weightRow*weightColumns + dotProductIterator] +=
+                                    currentInputTensor->data[inputRow*inpTensorColumns + dotProductIterator] * currentGradPassedDown;
                             }
+
+                            // every thread accumulates into this same bias, so it belongs
+                            // under the row's mutex just like the weights above it
+                            biases.grads[weightRow] += currentGradPassedDown;
                         }
 
                         // turns out doing two loops and distributing the grads separately is slightly faster than doing one loop and everything at once. cool
-                        
-                        biases.grads[weightRow] += currentGradPassedDown;
                     }
                 }
             });
