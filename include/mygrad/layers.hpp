@@ -122,6 +122,11 @@ struct Reparameterize : Layer {
 
     Reparameterize() : generator(std::random_device()()), currentEpsilons(Tensor::zeros({1})) {};
 
+    // resets the epsilon stream. every forward draws fresh epsilons, so seeding
+    // once at construction is not enough to make two forwards agree — this has
+    // to be called before each one to repeat a draw.
+    void setSeed( unsigned seed ) { generator.seed(seed); normDist.reset(); }
+
     void forward( Tensor& inputTensor ) override;
     void backward() override;
 

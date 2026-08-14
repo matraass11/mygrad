@@ -13,6 +13,10 @@ namespace mygrad {
 static std::random_device dev;
 static std::mt19937 generator(dev());
 
+void setSeed(unsigned seed) {
+    generator.seed(seed);
+}
+
 std::vector<dtype> normDistVector(size_t length, dtype standardDeviation) {
     std::normal_distribution<dtype> normDist{0, standardDeviation};
     std::vector<dtype> v(length);
