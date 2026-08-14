@@ -7,6 +7,8 @@
 
 namespace mygrad {
 
+void setSeed(unsigned seed); // makes weight initialization, and so a whole training run, reproducible
+
 std::vector<dtype> normDistVector(size_t length, dtype standardDeviation = 1);
 std::vector<dtype> KaimingWeightsVector(size_t inFeatures, size_t outFeatures);
 
