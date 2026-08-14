@@ -58,9 +58,9 @@ public:
 
 private:
 
-    dtype currentBeta;
+    dtype currentBeta = 0;
 
-    Tensor* distribution;
+    Tensor* distribution = nullptr;
 
     void setInputPointers( Tensor* distribution ) { this->distribution = distribution; }
 };

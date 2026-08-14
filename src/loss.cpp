@@ -123,7 +123,10 @@ dtype KLdivWithStandardNormal::operator()( Tensor& distribution, dtype beta ) {
 
 void KLdivWithStandardNormal::backward() {
     #ifndef NDEBUG
-        if (!(distribution) or (!currentBeta)) throw std::runtime_error("backward before forward impossible");
+        // only the pointer says whether a forward happened. beta is a legitimate
+        // zero — weighting the divergence out of the loss — and testing it here
+        // rejected that perfectly valid call.
+        if (!(distribution)) throw std::runtime_error("backward before forward impossible");
     #endif
 
     const dtype divisor = static_cast<dtype>(distribution->dimensions[0]) / currentBeta;
