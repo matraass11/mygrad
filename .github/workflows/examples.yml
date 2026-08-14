@@ -28,6 +28,12 @@ concurrency:
   group: examples-${{ github.ref }}
   cancel-in-progress: true
 
+# The implicit shell is `bash -e`, without pipefail, which would let a crashing
+# example pass because `tee` exited 0.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   mnist:
     name: mnist
@@ -35,7 +41,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # The fetch-* targets live in cmake/assets.cmake, which the top-level
       # project includes, so a library-only configure is enough to reach them.
@@ -79,7 +85,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # The decoder alone is 14 MB and is all `generate` loads -- this job is
       # the README's headline demo, run start to finish.
@@ -109,7 +115,7 @@ jobs:
 
       # Downloadable so a human can confirm they still look like cats, which no
       # assertion here can.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: generated-cats
           path: examples/cats/newCats
