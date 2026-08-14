@@ -1,0 +1,116 @@
+# Fetches the release assets and runs both examples end to end.
+#
+# Deliberately separate from ci.yml, which is hermetic and gates the badge on
+# main. Everything here depends on a download succeeding, so a bad release or a
+# throttled CDN would otherwise redden a badge that is supposed to mean "the
+# code is broken". This one runs on a schedule instead, and is the only place
+# that proves a fresh clone can still fetch weights and produce output.
+#
+# No `train` mode ever runs here: training is minutes to hours of CPU and the
+# checkpoints already exist on the v0.1.0 release. `reconstruct` is out too --
+# it needs the Kaggle cat dataset, which requires auth.
+#
+# Both examples resolve their paths relative to the working directory
+# (`../model`, `../pretrained_decoder.model`, `../newCats`), so every run step
+# is `working-directory:` the example's build tree, exactly as the READMEs say.
+#
+# GitHub disables scheduled workflows in a repository with no pushes for 60
+# days; workflow_dispatch is the way back if that happens.
+
+name: examples
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays, 06:17 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: examples-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mnist:
+    name: mnist
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The fetch-* targets live in cmake/assets.cmake, which the top-level
+      # project includes, so a library-only configure is enough to reach them.
+      # fetch-mnist pulls the classifier and all four idx files (~55 MB) and
+      # verifies every sha256 against cmake/assets.cmake.
+      - name: fetch the mnist weights and dataset
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target fetch-mnist
+
+      - name: build the mnist example
+        run: |
+          cmake -S examples/mnist -B examples/mnist/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build examples/mnist/build --parallel 4
+
+      # The published checkpoint sat broken in the repo for months because
+      # nothing ever asserted the accuracy -- `test` printed 9.4% and no one
+      # was reading. Assert it: 96.01% is the retrained figure, and anything
+      # under 90% means the asset or the loader has rotted again.
+      - name: mnist test
+        working-directory: examples/mnist/build
+        run: |
+          ./mnist test | tee testOutput.txt
+          accuracy=$(awk '/test accuracy:/ { print $3 }' testOutput.txt)
+          if [ -z "$accuracy" ]; then
+            echo "::error::mnist test printed no accuracy line"
+            exit 1
+          fi
+          awk -v accuracy="$accuracy" 'BEGIN { exit !(accuracy >= 0.90) }' || {
+            echo "::error::mnist test accuracy $accuracy is below 0.90"
+            exit 1
+          }
+
+      - name: mnist show
+        working-directory: examples/mnist/build
+        run: ./mnist show
+
+  cats:
+    name: cats
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The decoder alone is 14 MB and is all `generate` loads -- this job is
+      # the README's headline demo, run start to finish.
+      - name: fetch the cats decoder
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target fetch-cats-decoder
+
+      - name: build the cats example
+        run: |
+          cmake -S examples/cats -B examples/cats/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build examples/cats/build --parallel 4
+
+      - name: cats generate
+        working-directory: examples/cats/build
+        run: ./cats generate 5
+
+      # A decoder that loads but emits nothing, or emits empty files, still
+      # exits 0 -- so count the images instead of trusting the exit code.
+      - name: check the generated images
+        run: |
+          written=$(find examples/cats/newCats -name 'cat_*.png' -size +0c | wc -l | tr -d '[:space:]')
+          if [ "$written" -ne 5 ]; then
+            echo "::error::expected 5 non-empty generated images, found $written"
+            exit 1
+          fi
+
+      # Downloadable so a human can confirm they still look like cats, which no
+      # assertion here can.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: generated-cats
+          path: examples/cats/newCats
+          retention-days: 14
