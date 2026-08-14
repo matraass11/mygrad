@@ -10,7 +10,12 @@ FetchContent_MakeAvailable(Catch2)
 
 # sources listed explicitly, like the library's
 add_executable(mygradTests
-    smoke.cpp
+    conventions.cpp
+    layerGradients.cpp
+    lossGradients.cpp
+    modelGradients.cpp
+    smallArray.cpp
+    threadPool.cpp
 )
 
 target_link_libraries(mygradTests PRIVATE mygrad Catch2::Catch2WithMain)
