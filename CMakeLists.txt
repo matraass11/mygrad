@@ -25,3 +25,13 @@ target_include_directories(mygrad PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
+
+# Tests are opt-in. Catch2 is a test-only dependency and is not fetched unless
+# this is on, so consuming mygrad through add_subdirectory (as both examples do)
+# stays free of it and libmygrad.a keeps linking against nothing extra.
+option(MYGRAD_BUILD_TESTS "Build the mygrad test suite (fetches Catch2)" OFF)
+
+if(MYGRAD_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
