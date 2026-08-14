@@ -1,15 +1,36 @@
 #include "mygrad/threadPool.hpp"
 
+#include <cstdlib>
 #include <iostream>
 
 namespace mygrad {
 
 static constexpr size_t DEFAULT_POOL_SIZE = 8;
 
-ThreadPool::ThreadPool() : 
+// MYGRAD_NUM_THREADS is read here, in the constructor, rather than through a
+// setter: the pool is a lazily constructed singleton, so a setter would only
+// take effect if it ran before the first push, and nothing could enforce that.
+// Anything unusable falls back to the automatic size instead of throwing —
+// this runs inside a static initialiser, a bad place to throw from.
+static size_t poolSizeFromEnvironment() {
+    const char* requestedThreads = std::getenv("MYGRAD_NUM_THREADS");
+    if (requestedThreads and *requestedThreads) {
+        char* firstUnparsedCharacter = nullptr;
+        const unsigned long requested = std::strtoul(requestedThreads, &firstUnparsedCharacter, 10);
+        if (*firstUnparsedCharacter == '\0' and requested > 0) { return requested; }
+
+        std::cerr << "mygrad: MYGRAD_NUM_THREADS=\"" << requestedThreads
+                  << "\" is not a positive number, sizing the thread pool automatically\n";
+    }
+
+    const size_t detectedCores = std::thread::hardware_concurrency();
+    return detectedCores ? detectedCores : DEFAULT_POOL_SIZE;
+}
+
+ThreadPool::ThreadPool() :
     threads(),
     jobs(), jobsMutex(), jobsAvailable(), jobsRemaining(0) {
-        const size_t poolSize = std::thread::hardware_concurrency() ? std::thread::hardware_concurrency() : DEFAULT_POOL_SIZE;
+        const size_t poolSize = poolSizeFromEnvironment();
         threads.reserve(poolSize);
         for (size_t i = 0; i < poolSize; i++) {
             threads.emplace_back(std::thread(&threadLoop));
